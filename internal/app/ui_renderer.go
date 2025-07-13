@@ -283,30 +283,30 @@ func (ur *UIRenderer) drawMoonDetailsModal(width, height int) {
 	ur.drawText(modalX+2, modalY+1, titleStyle, title)
 
 	detailStyle := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorDarkBlue)
-	currentY := modalY + 3
-
-	ur.drawText(modalX+2, currentY, detailStyle, "Type: Moon")
+	currentY := modalY + 2
 	currentY++
 
-	if ur.state.SelectedMoon.ID != "" {
-		currentY = ur.drawWrappedTextAt(modalX+2, currentY, detailStyle, fmt.Sprintf("ID: %s", ur.state.SelectedMoon.ID), constants.ModalContentWidth)
-		currentY++
-	}
-
-	if ur.state.SelectedMoon.Name != "" && ur.state.SelectedMoon.Name != ur.state.SelectedMoon.EnglishName {
-		currentY = ur.drawWrappedTextAt(modalX+2, currentY, detailStyle, fmt.Sprintf("Original Name: %s", ur.state.SelectedMoon.Name), constants.ModalContentWidth)
+	if ur.state.SelectedMoon.BodyType != "" {
+		currentY = ur.drawWrappedTextAt(modalX+2, currentY, detailStyle, fmt.Sprintf("Type: %s", ur.state.SelectedMoon.BodyType), constants.ModalContentWidth)
 		currentY++
 	}
 
 	currentY = ur.drawWrappedTextAt(modalX+2, currentY, detailStyle, fmt.Sprintf("Orbits: %s", ur.state.SelectedPlanet.EnglishName), constants.ModalContentWidth)
 	currentY++
 
+	if ur.state.SelectedMoon.Name != "" && ur.state.SelectedMoon.Name != ur.state.SelectedMoon.EnglishName {
+		currentY = ur.drawWrappedTextAt(modalX+2, currentY, detailStyle, fmt.Sprintf("Original Name: %s", ur.state.SelectedMoon.Name), constants.ModalContentWidth)
+		currentY++
+	}
+
 	currentY = ur.drawCelestialBodyDetails(ur.state.SelectedMoon, modalX+2, currentY, detailStyle)
 
-	ur.drawText(modalX+2, currentY+1, tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue), "Note: Limited moon data available from API")
+	if ur.isAPIMoon(ur.state.SelectedMoon) {
+		ur.drawWrappedTextAt(modalX+2, modalY+modalHeight-3, tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue), "Note: Limited moon data available from API", constants.ModalContentWidth)
+	}
 
 	instructionStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorDarkBlue)
-	ur.drawText(modalX+2, modalY+modalHeight-2, instructionStyle, "Press Enter, Escape, or 'b' to go back to moon list")
+	ur.drawWrappedTextAt(modalX+2, modalY+modalHeight-2, instructionStyle, "Press Enter, Escape, or 'b' to go back to moon list", constants.ModalContentWidth)
 }
 
 func (ur *UIRenderer) drawSystemListModal(width, height int) {
@@ -533,14 +533,6 @@ func (ur *UIRenderer) calculateMoonDetailsLines(moon models.CelestialBody) int {
 func (ur *UIRenderer) drawCelestialBodyDetails(body models.CelestialBody, x, y int, style tcell.Style) int {
 	currentY := y
 
-	fields := display.GetCelestialBodyFields()
-	for _, field := range fields {
-		if field.Condition(body) {
-			detail := field.FormatFieldValue(body)
-			currentY = ur.drawWrappedTextAt(x, currentY, style, detail, constants.ModalContentWidth)
-		}
-	}
-
 	stringFields := display.GetCelestialBodyStringFields()
 	for _, field := range stringFields {
 		if field.Condition(body) {
@@ -549,5 +541,62 @@ func (ur *UIRenderer) drawCelestialBodyDetails(body models.CelestialBody, x, y i
 		}
 	}
 
+	fields := display.GetCelestialBodyFields()
+	for _, field := range fields {
+		if field.Condition(body) {
+			detail := field.FormatFieldValue(body)
+			currentY = ur.drawWrappedTextAt(x, currentY, style, detail, constants.ModalContentWidth)
+		}
+	}
+
 	return currentY
+}
+
+func (ur *UIRenderer) GetModalDimensions(screenWidth, screenHeight int, dynamicHeight ...int) (modalX, modalY, modalWidth, modalHeight int) {
+	modalWidth = constants.ModalWidth
+	if len(dynamicHeight) > 0 {
+		modalHeight = dynamicHeight[0]
+	} else {
+		modalHeight = constants.ModalHeight
+	}
+	modalX = screenWidth - modalWidth - constants.ModalMargin
+	modalY = 1
+	return
+}
+
+func (ur *UIRenderer) IsClickInModalArea(mouseX, mouseY int) bool {
+	if !ur.state.ShowingDetails && !ur.state.ShowingMoons && !ur.state.ShowingMoonDetails && !ur.state.ShowingSystemList {
+		return false
+	}
+
+	screenWidth, screenHeight := ur.screen.Size()
+	var modalX, modalY, modalWidth, modalHeight int
+
+	if ur.state.ShowingDetails {
+		contentLines := ur.calculatePlanetDetailsLines(ur.state.SelectedPlanet)
+		dynamicHeight := minimum(contentLines+6, screenHeight-4)
+		modalX, modalY, modalWidth, modalHeight = ur.GetModalDimensions(screenWidth, screenHeight, dynamicHeight)
+	} else if ur.state.ShowingMoonDetails {
+		contentLines := ur.calculateMoonDetailsLines(ur.state.SelectedMoon)
+		dynamicHeight := minimum(contentLines+6, screenHeight-4)
+		modalX, modalY, modalWidth, modalHeight = ur.GetModalDimensions(screenWidth, screenHeight, dynamicHeight)
+	} else {
+		modalX, modalY, modalWidth, modalHeight = ur.GetModalDimensions(screenWidth, screenHeight)
+	}
+
+	return mouseX >= modalX && mouseX < modalX+modalWidth &&
+		mouseY >= modalY && mouseY < modalY+modalHeight
+}
+
+func minimum(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+// isAPIMoon determines if a moon was fetched from the API vs loaded from JSON
+func (ur *UIRenderer) isAPIMoon(moon models.CelestialBody) bool {
+	return moon.MeanRadius > 0 || moon.Mass.MassValue > 0 || moon.Density > 0 ||
+		(moon.ID != "" && !strings.Contains(moon.ID, "moon"))
 }

@@ -111,3 +111,4 @@ func (jf *JSONFormat) validateSystemMetadata(metadata *SystemMetadata) error {
 
 	return nil
 }
+

@@ -50,32 +50,18 @@ func GetCelestialBodyFields() []FieldConfig {
 			Value:     func(cb models.CelestialBody) interface{} { return cb.Density },
 		},
 		{
+			Label:     "Volume",
+			Format:    "%.2e",
+			Unit:      "km³",
+			Condition: func(cb models.CelestialBody) bool { return cb.GetVolumeKm3() > 0 },
+			Value:     func(cb models.CelestialBody) interface{} { return cb.GetVolumeKm3() },
+		},
+		{
 			Label:     "Gravity",
 			Format:    "%.2f",
 			Unit:      "m/s²",
 			Condition: func(cb models.CelestialBody) bool { return cb.Gravity > 0 },
 			Value:     func(cb models.CelestialBody) interface{} { return cb.Gravity },
-		},
-		{
-			Label:     "Distance from Sun",
-			Format:    "%.0f",
-			Unit:      "km",
-			Condition: func(cb models.CelestialBody) bool { return cb.SemimajorAxis > 0 },
-			Value:     func(cb models.CelestialBody) interface{} { return cb.SemimajorAxis },
-		},
-		{
-			Label:     "Orbital Period",
-			Format:    "%.2f",
-			Unit:      "days",
-			Condition: func(cb models.CelestialBody) bool { return cb.SideralOrbit > 0 },
-			Value:     func(cb models.CelestialBody) interface{} { return cb.SideralOrbit },
-		},
-		{
-			Label:     "Rotation Period",
-			Format:    "%.2f",
-			Unit:      "hours",
-			Condition: func(cb models.CelestialBody) bool { return cb.SideralRotation != 0 },
-			Value:     func(cb models.CelestialBody) interface{} { return cb.SideralRotation },
 		},
 		{
 			Label:     "Escape Velocity",
@@ -106,25 +92,18 @@ func GetCelestialBodyFields() []FieldConfig {
 			Value:     func(cb models.CelestialBody) interface{} { return cb.Flattening },
 		},
 		{
-			Label:     "Orbital Eccentricity",
-			Format:    "%.6f",
-			Unit:      "",
-			Condition: func(cb models.CelestialBody) bool { return cb.Eccentricity > 0 },
-			Value:     func(cb models.CelestialBody) interface{} { return cb.Eccentricity },
+			Label:     "Distance from Sun",
+			Format:    "%.0f",
+			Unit:      "km",
+			Condition: func(cb models.CelestialBody) bool { return cb.SemimajorAxis > 0 },
+			Value:     func(cb models.CelestialBody) interface{} { return cb.SemimajorAxis },
 		},
 		{
-			Label:     "Orbital Inclination",
+			Label:     "Orbital Period",
 			Format:    "%.2f",
-			Unit:      "degrees",
-			Condition: func(cb models.CelestialBody) bool { return cb.Inclination != 0 },
-			Value:     func(cb models.CelestialBody) interface{} { return cb.Inclination },
-		},
-		{
-			Label:     "Volume",
-			Format:    "%.2e",
-			Unit:      "km³",
-			Condition: func(cb models.CelestialBody) bool { return cb.GetVolumeKm3() > 0 },
-			Value:     func(cb models.CelestialBody) interface{} { return cb.GetVolumeKm3() },
+			Unit:      "days",
+			Condition: func(cb models.CelestialBody) bool { return cb.SideralOrbit > 0 },
+			Value:     func(cb models.CelestialBody) interface{} { return cb.SideralOrbit },
 		},
 		{
 			Label:     "Perihelion",
@@ -140,6 +119,27 @@ func GetCelestialBodyFields() []FieldConfig {
 			Condition: func(cb models.CelestialBody) bool { return cb.Aphelion > 0 },
 			Value:     func(cb models.CelestialBody) interface{} { return cb.Aphelion },
 		},
+		{
+			Label:     "Orbital Eccentricity",
+			Format:    "%.6f",
+			Unit:      "",
+			Condition: func(cb models.CelestialBody) bool { return cb.Eccentricity > 0 },
+			Value:     func(cb models.CelestialBody) interface{} { return cb.Eccentricity },
+		},
+		{
+			Label:     "Orbital Inclination",
+			Format:    "%.2f",
+			Unit:      "degrees",
+			Condition: func(cb models.CelestialBody) bool { return cb.Inclination != 0 },
+			Value:     func(cb models.CelestialBody) interface{} { return cb.Inclination },
+		},
+		{
+			Label:     "Rotation Period",
+			Format:    "%.2f",
+			Unit:      "hours",
+			Condition: func(cb models.CelestialBody) bool { return cb.SideralRotation != 0 },
+			Value:     func(cb models.CelestialBody) interface{} { return cb.SideralRotation },
+		},
 	}
 }
 
@@ -148,9 +148,9 @@ func GetCelestialBodyFields() []FieldConfig {
 func GetCelestialBodyStringFields() []StringFieldConfig {
 	return []StringFieldConfig{
 		{
-			Label:     "Dimension",
-			Condition: func(cb models.CelestialBody) bool { return cb.Dimension != "" },
-			Value:     func(cb models.CelestialBody) string { return cb.Dimension },
+			Label:     "Type",
+			Condition: func(cb models.CelestialBody) bool { return cb.BodyType != "" },
+			Value:     func(cb models.CelestialBody) string { return cb.BodyType },
 		},
 		{
 			Label:     "Discovered By",
@@ -166,6 +166,11 @@ func GetCelestialBodyStringFields() []StringFieldConfig {
 			Label:     "Alternative Name",
 			Condition: func(cb models.CelestialBody) bool { return cb.AlternativeName != "" },
 			Value:     func(cb models.CelestialBody) string { return cb.AlternativeName },
+		},
+		{
+			Label:     "Dimension",
+			Condition: func(cb models.CelestialBody) bool { return cb.Dimension != "" },
+			Value:     func(cb models.CelestialBody) string { return cb.Dimension },
 		},
 	}
 }

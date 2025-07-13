@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/furan917/go-solar-system/internal/models"
+	"github.com/furan917/go-solar-system/internal/orbital"
 )
 
 // StarPosition represents the position of a star in the visualization
@@ -14,22 +15,24 @@ type StarPosition struct {
 
 // CelestialObjectRenderer handles rendering of celestial objects
 type CelestialObjectRenderer struct {
-	circleDrawer *CircleDrawer
-	startTime    time.Time
-	epochTime    time.Time
-	width        int
-	height       int
+	circleDrawer      *CircleDrawer
+	startTime         time.Time
+	epochTime         time.Time
+	width             int
+	height            int
+	calculatorFactory *orbital.CalculatorFactory
 }
 
 // NewCelestialObjectRenderer creates a new celestial object renderer
 func NewCelestialObjectRenderer(circleDrawer *CircleDrawer, width, height int) *CelestialObjectRenderer {
 	epoch := time.Now()
 	return &CelestialObjectRenderer{
-		circleDrawer: circleDrawer,
-		startTime:    time.Now(),
-		epochTime:    epoch,
-		width:        width,
-		height:       height,
+		circleDrawer:      circleDrawer,
+		startTime:         time.Now(),
+		epochTime:         epoch,
+		width:             width,
+		height:            height,
+		calculatorFactory: orbital.NewCalculatorFactory(),
 	}
 }
 
@@ -285,26 +288,8 @@ func (cor *CelestialObjectRenderer) calculateMeanAnomaly(planet models.Celestial
 
 // calculateCurrentMeanAnomaly calculates where a planet should be in its orbit today
 func (cor *CelestialObjectRenderer) calculateCurrentMeanAnomaly(planet models.CelestialBody) float64 {
-	if cor.isOurSolarSystem(planet) {
-		return cor.calculateSolarSystemMeanAnomaly(planet)
-	}
-
-	// Use generic approach for unknown systems
-	// Generate a pseudo-random but deterministic starting position based on planet properties
-	// This ensures planets don't all start at the same position
-
-	seed := planet.SemimajorAxis + planet.SideralOrbit + planet.MeanRadius
-	initialAngle := math.Mod(seed*0.01745329, 2*math.Pi) // 0.01745329 ≈ π/180
-	daysSinceEpoch := time.Since(cor.epochTime).Hours() / 24.0
-
-	if planet.SideralOrbit <= 0 {
-		return initialAngle
-	}
-	meanMotionPerDay := 2 * math.Pi / planet.SideralOrbit
-
-	currentMeanAnomaly := initialAngle + meanMotionPerDay*daysSinceEpoch
-
-	return math.Mod(currentMeanAnomaly, 2*math.Pi)
+	calculator := cor.calculatorFactory.CreateCalculator(planet, cor.epochTime)
+	return calculator.CalculateMeanAnomaly(planet, time.Now())
 }
 
 // calculateStarPositions calculates positions for multiple stars around their barycenter
@@ -574,70 +559,4 @@ func (cor *CelestialObjectRenderer) classifyByTemperature(temp float64) string {
 	} else {
 		return "M5V"
 	}
-}
-
-// isOurSolarSystem detects if we're working with our Solar System based on planet characteristics
-func (cor *CelestialObjectRenderer) isOurSolarSystem(planet models.CelestialBody) bool {
-	knownPlanets := map[string]bool{
-		"Mercury": true, "Venus": true, "Earth": true, "Mars": true,
-		"Jupiter": true, "Saturn": true, "Uranus": true, "Neptune": true, "Pluto": true,
-	}
-
-	return knownPlanets[planet.EnglishName]
-}
-
-// calculateSolarSystemMeanAnomaly calculates accurate positions for our Solar System
-func (cor *CelestialObjectRenderer) calculateSolarSystemMeanAnomaly(planet models.CelestialBody) float64 {
-	// Reference epoch: J2000.0 (January 1, 2000, 12:00 TT)
-	j2000 := time.Date(2000, 1, 1, 12, 0, 0, 0, time.UTC)
-
-	// Accurate mean anomalies at J2000.0 epoch for our Solar System (in radians)
-	j2000MeanAnomalies := map[string]float64{
-		"Mercury": 174.7948 * math.Pi / 180.0,
-		"Venus":   50.4161 * math.Pi / 180.0,
-		"Earth":   357.5291 * math.Pi / 180.0,
-		"Mars":    19.3730 * math.Pi / 180.0,
-		"Jupiter": 20.0202 * math.Pi / 180.0,
-		"Saturn":  317.0207 * math.Pi / 180.0,
-		"Uranus":  141.0498 * math.Pi / 180.0,
-		"Neptune": 256.2250 * math.Pi / 180.0,
-		"Pluto":   14.8820 * math.Pi / 180.0,
-	}
-
-	// Get J2000.0 mean anomaly for this planet
-	j2000MeanAnomaly, exists := j2000MeanAnomalies[planet.EnglishName]
-	if !exists {
-		// Fallback to generic calculation if planet not found
-		return cor.calculateGenericMeanAnomaly(planet)
-	}
-
-	currentDate := time.Now()
-	daysSinceJ2000 := currentDate.Sub(j2000).Hours() / 24.0
-
-	if planet.SideralOrbit <= 0 {
-		return j2000MeanAnomaly
-	}
-	meanMotionPerDay := 2 * math.Pi / planet.SideralOrbit
-
-	currentMeanAnomaly := j2000MeanAnomaly + meanMotionPerDay*daysSinceJ2000
-
-	return math.Mod(currentMeanAnomaly, 2*math.Pi)
-}
-
-// calculateGenericMeanAnomaly provides fallback calculation for unknown planets
-func (cor *CelestialObjectRenderer) calculateGenericMeanAnomaly(planet models.CelestialBody) float64 {
-	seed := planet.SemimajorAxis + planet.SideralOrbit + planet.MeanRadius
-
-	initialAngle := math.Mod(seed*0.01745329, 2*math.Pi) // 0.01745329 ≈ π/180
-
-	daysSinceEpoch := time.Since(cor.epochTime).Hours() / 24.0
-
-	if planet.SideralOrbit <= 0 {
-		return initialAngle
-	}
-	meanMotionPerDay := 2 * math.Pi / planet.SideralOrbit
-
-	currentMeanAnomaly := initialAngle + meanMotionPerDay*daysSinceEpoch
-
-	return math.Mod(currentMeanAnomaly, 2*math.Pi)
 }
