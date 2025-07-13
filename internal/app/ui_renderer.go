@@ -286,22 +286,24 @@ func (ur *UIRenderer) drawMoonDetailsModal(width, height int) {
 	currentY := modalY + 2
 	currentY++
 
-	if ur.state.SelectedMoon.ID != "" {
-		currentY = ur.drawWrappedTextAt(modalX+2, currentY, detailStyle, fmt.Sprintf("ID: %s", ur.state.SelectedMoon.ID), constants.ModalContentWidth)
-		currentY++
-	}
-
-	if ur.state.SelectedMoon.Name != "" && ur.state.SelectedMoon.Name != ur.state.SelectedMoon.EnglishName {
-		currentY = ur.drawWrappedTextAt(modalX+2, currentY, detailStyle, fmt.Sprintf("Original Name: %s", ur.state.SelectedMoon.Name), constants.ModalContentWidth)
+	if ur.state.SelectedMoon.BodyType != "" {
+		currentY = ur.drawWrappedTextAt(modalX+2, currentY, detailStyle, fmt.Sprintf("Type: %s", ur.state.SelectedMoon.BodyType), constants.ModalContentWidth)
 		currentY++
 	}
 
 	currentY = ur.drawWrappedTextAt(modalX+2, currentY, detailStyle, fmt.Sprintf("Orbits: %s", ur.state.SelectedPlanet.EnglishName), constants.ModalContentWidth)
 	currentY++
 
+	if ur.state.SelectedMoon.Name != "" && ur.state.SelectedMoon.Name != ur.state.SelectedMoon.EnglishName {
+		currentY = ur.drawWrappedTextAt(modalX+2, currentY, detailStyle, fmt.Sprintf("Original Name: %s", ur.state.SelectedMoon.Name), constants.ModalContentWidth)
+		currentY++
+	}
+
 	currentY = ur.drawCelestialBodyDetails(ur.state.SelectedMoon, modalX+2, currentY, detailStyle)
 
-	ur.drawWrappedTextAt(modalX+2, modalY+modalHeight-3, tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue), "Note: Limited moon data available from API", constants.ModalContentWidth)
+	if ur.isAPIMoon(ur.state.SelectedMoon) {
+		ur.drawWrappedTextAt(modalX+2, modalY+modalHeight-3, tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue), "Note: Limited moon data available from API", constants.ModalContentWidth)
+	}
 
 	instructionStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorDarkBlue)
 	ur.drawWrappedTextAt(modalX+2, modalY+modalHeight-2, instructionStyle, "Press Enter, Escape, or 'b' to go back to moon list", constants.ModalContentWidth)
@@ -591,4 +593,10 @@ func minimum(a, b int) int {
 		return a
 	}
 	return b
+}
+
+// isAPIMoon determines if a moon was fetched from the API vs loaded from JSON
+func (ur *UIRenderer) isAPIMoon(moon models.CelestialBody) bool {
+	return moon.MeanRadius > 0 || moon.Mass.MassValue > 0 || moon.Density > 0 ||
+		(moon.ID != "" && !strings.Contains(moon.ID, "moon"))
 }
