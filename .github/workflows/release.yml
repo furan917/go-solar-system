@@ -10,6 +10,10 @@ on:
         description: 'Tag name for the release e.g v1.0.0'
         required: true
 
+permissions:
+    contents: write
+    pull-requests: write
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
