@@ -15,7 +15,7 @@ Terminal app where you can explore solar syatems.
 git clone https://github.com/furan917/go-solar-system.git
 cd go-solar-system
 go mod tidy
-go run main.go
+go build
 ```
 
 That should work. If it doesn't, check if you have Go installed?
