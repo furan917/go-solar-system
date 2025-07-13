@@ -50,6 +50,28 @@
       "age": 6000000000
     },
     {
+      "id": "proxima-centauri",
+      "name": "Proxima Centauri",
+      "englishName": "Proxima Centauri",
+      "bodyType": "Star",
+      "isPlanet": false,
+      "meanRadius": 106900,
+      "mass": {
+        "massValue": 0.1221,
+        "massExponent": 30
+      },
+      "semimajorAxis": 0,
+      "sideralRotation": 8304,
+      "density": 9.90,
+      "gravity": 17.0,
+      "discoveredBy": "Robert Innes",
+      "discoveryDate": "1915",
+      "moons": [],
+      "temperature": 3042,
+      "stellarClass": "M5.5Ve",
+      "age": 4850000000
+    },
+    {
       "id": "proxima-centauri-b",
       "name": "Proxima Centauri b",
       "englishName": "Proxima Centauri b",
@@ -57,78 +79,21 @@
       "isPlanet": true,
       "meanRadius": 6990,
       "mass": {
-        "massValue": 1.27,
+        "massValue": 1.07,
         "massExponent": 24
       },
-      "semimajorAxis": 7500000,
-      "sideralOrbit": 11.186,
-      "sideralRotation": 11.186,
+      "semimajorAxis": 7264000,
+      "sideralOrbit": 11.1868,
+      "sideralRotation": 11.1868,
       "density": 5.2,
       "gravity": 9.8,
-      "eccentricity": 0.11,
-      "inclination": 89.0,
+      "eccentricity": 0.02,
       "discoveredBy": "European Southern Observatory",
       "discoveryDate": "2016",
       "moons": [],
       "equilibriumTemperature": 234,
       "habitableZone": true,
       "escapeVelocity": 11.3
-    },
-    {
-      "id": "alpha-centauri-bb",
-      "name": "Alpha Centauri Bb",
-      "englishName": "Alpha Centauri Bb",
-      "bodyType": "Planet",
-      "isPlanet": true,
-      "meanRadius": 7200,
-      "mass": {
-        "massValue": 1.13,
-        "massExponent": 24
-      },
-      "semimajorAxis": 6000000,
-      "sideralOrbit": 3.236,
-      "sideralRotation": 3.236,
-      "density": 4.9,
-      "gravity": 8.7,
-      "eccentricity": 0.02,
-      "inclination": 88.8,
-      "discoveredBy": "European Southern Observatory",
-      "discoveryDate": "2012",
-      "moons": [],
-      "equilibriumTemperature": 1200,
-      "habitableZone": false,
-      "escapeVelocity": 10.8
-    },
-    {
-      "id": "alpha-centauri-bc",
-      "name": "Alpha Centauri Bc",
-      "englishName": "Alpha Centauri Bc",
-      "bodyType": "Planet",
-      "isPlanet": true,
-      "meanRadius": 9500,
-      "mass": {
-        "massValue": 3.3,
-        "massExponent": 24
-      },
-      "semimajorAxis": 25000000,
-      "sideralOrbit": 20.4,
-      "sideralRotation": 20.4,
-      "density": 4.2,
-      "gravity": 13.1,
-      "eccentricity": 0.09,
-      "inclination": 89.1,
-      "discoveredBy": "European Southern Observatory",
-      "discoveryDate": "2022",
-      "moons": [
-        {
-          "id": "alpha-centauri-bc-moon1",
-          "name": "Alpha Centauri Bc I",
-          "englishName": "Alpha Centauri Bc I"
-        }
-      ],
-      "equilibriumTemperature": 278,
-      "habitableZone": true,
-      "escapeVelocity": 17.3
     }
   ]
 }

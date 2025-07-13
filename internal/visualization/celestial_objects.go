@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/furan917/go-solar-system/internal/models"
+	"github.com/furan917/go-solar-system/internal/orbital"
 )
 
 // StarPosition represents the position of a star in the visualization
@@ -14,22 +15,24 @@ type StarPosition struct {
 
 // CelestialObjectRenderer handles rendering of celestial objects
 type CelestialObjectRenderer struct {
-	circleDrawer *CircleDrawer
-	startTime    time.Time
-	epochTime    time.Time
-	width        int
-	height       int
+	circleDrawer      *CircleDrawer
+	startTime         time.Time
+	epochTime         time.Time
+	width             int
+	height            int
+	calculatorFactory *orbital.CalculatorFactory
 }
 
 // NewCelestialObjectRenderer creates a new celestial object renderer
 func NewCelestialObjectRenderer(circleDrawer *CircleDrawer, width, height int) *CelestialObjectRenderer {
 	epoch := time.Now()
 	return &CelestialObjectRenderer{
-		circleDrawer: circleDrawer,
-		startTime:    time.Now(),
-		epochTime:    epoch,
-		width:        width,
-		height:       height,
+		circleDrawer:      circleDrawer,
+		startTime:         time.Now(),
+		epochTime:         epoch,
+		width:             width,
+		height:            height,
+		calculatorFactory: orbital.NewCalculatorFactory(),
 	}
 }
 
@@ -285,26 +288,8 @@ func (cor *CelestialObjectRenderer) calculateMeanAnomaly(planet models.Celestial
 
 // calculateCurrentMeanAnomaly calculates where a planet should be in its orbit today
 func (cor *CelestialObjectRenderer) calculateCurrentMeanAnomaly(planet models.CelestialBody) float64 {
-	if cor.isOurSolarSystem(planet) {
-		return cor.calculateSolarSystemMeanAnomaly(planet)
-	}
-
-	// Use generic approach for unknown systems
-	// Generate a pseudo-random but deterministic starting position based on planet properties
-	// This ensures planets don't all start at the same position
-
-	seed := planet.SemimajorAxis + planet.SideralOrbit + planet.MeanRadius
-	initialAngle := math.Mod(seed*0.01745329, 2*math.Pi) // 0.01745329 ≈ π/180
-	daysSinceEpoch := time.Since(cor.epochTime).Hours() / 24.0
-
-	if planet.SideralOrbit <= 0 {
-		return initialAngle
-	}
-	meanMotionPerDay := 2 * math.Pi / planet.SideralOrbit
-
-	currentMeanAnomaly := initialAngle + meanMotionPerDay*daysSinceEpoch
-
-	return math.Mod(currentMeanAnomaly, 2*math.Pi)
+	calculator := cor.calculatorFactory.CreateCalculator(planet, cor.epochTime)
+	return calculator.CalculateMeanAnomaly(planet, time.Now())
 }
 
 // calculateStarPositions calculates positions for multiple stars around their barycenter

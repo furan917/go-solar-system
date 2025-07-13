@@ -39,6 +39,9 @@ type CelestialBody struct {
 	Temperature  float64 `json:"temperature"`
 	StellarClass string  `json:"stellarClass"`
 	Age          float64 `json:"age"`
+
+	// Orbital elements for precise positioning (optional)
+	OrbitalElements *OrbitalElement `json:"orbitalElements,omitempty"`
 }
 
 type Planet struct {

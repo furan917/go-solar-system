@@ -28,13 +28,17 @@ func (ds *DistanceScaler) ScaleDistance(distance float64, planets []models.Celes
 
 	minDistance, maxDistance := ds.findDistanceRange(planets)
 
+	if maxDistance <= minDistance || maxDistance-minDistance < minDistance*0.1 {
+		return 7.0
+	}
+
 	logMin := math.Log(minDistance)
 	logMax := math.Log(maxDistance)
 	logCurrent := math.Log(distance)
 
 	normalized := (logCurrent - logMin) / (logMax - logMin)
 
-	minRadius := 8.0
+	minRadius := 7.0
 	maxRadius := math.Min(float64(ds.width/2-3), float64(ds.height/2-3)) * 0.95
 
 	return minRadius + normalized*(maxRadius-minRadius)

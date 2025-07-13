@@ -283,9 +283,7 @@ func (ur *UIRenderer) drawMoonDetailsModal(width, height int) {
 	ur.drawText(modalX+2, modalY+1, titleStyle, title)
 
 	detailStyle := tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorDarkBlue)
-	currentY := modalY + 3
-
-	ur.drawText(modalX+2, currentY, detailStyle, "Type: Moon")
+	currentY := modalY + 2
 	currentY++
 
 	if ur.state.SelectedMoon.ID != "" {
@@ -303,10 +301,10 @@ func (ur *UIRenderer) drawMoonDetailsModal(width, height int) {
 
 	currentY = ur.drawCelestialBodyDetails(ur.state.SelectedMoon, modalX+2, currentY, detailStyle)
 
-	ur.drawText(modalX+2, currentY+1, tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue), "Note: Limited moon data available from API")
+	ur.drawWrappedTextAt(modalX+2, modalY+modalHeight-3, tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue), "Note: Limited moon data available from API", constants.ModalContentWidth)
 
 	instructionStyle := tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorDarkBlue)
-	ur.drawText(modalX+2, modalY+modalHeight-2, instructionStyle, "Press Enter, Escape, or 'b' to go back to moon list")
+	ur.drawWrappedTextAt(modalX+2, modalY+modalHeight-2, instructionStyle, "Press Enter, Escape, or 'b' to go back to moon list", constants.ModalContentWidth)
 }
 
 func (ur *UIRenderer) drawSystemListModal(width, height int) {
@@ -533,18 +531,18 @@ func (ur *UIRenderer) calculateMoonDetailsLines(moon models.CelestialBody) int {
 func (ur *UIRenderer) drawCelestialBodyDetails(body models.CelestialBody, x, y int, style tcell.Style) int {
 	currentY := y
 
-	fields := display.GetCelestialBodyFields()
-	for _, field := range fields {
-		if field.Condition(body) {
-			detail := field.FormatFieldValue(body)
-			currentY = ur.drawWrappedTextAt(x, currentY, style, detail, constants.ModalContentWidth)
-		}
-	}
-
 	stringFields := display.GetCelestialBodyStringFields()
 	for _, field := range stringFields {
 		if field.Condition(body) {
 			detail := field.FormatStringFieldValue(body)
+			currentY = ur.drawWrappedTextAt(x, currentY, style, detail, constants.ModalContentWidth)
+		}
+	}
+
+	fields := display.GetCelestialBodyFields()
+	for _, field := range fields {
+		if field.Condition(body) {
+			detail := field.FormatFieldValue(body)
 			currentY = ur.drawWrappedTextAt(x, currentY, style, detail, constants.ModalContentWidth)
 		}
 	}
