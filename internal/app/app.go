@@ -24,10 +24,9 @@ type SolarSystem struct {
 	// Business logic components
 	planetService *PlanetService
 	systemManager *SystemManager
-	uiRenderer    *UIRenderer
 
 	// UI components
-	renderer        *AppRenderer
+	renderer        *UIRenderer
 	eventDispatcher *EventDispatcher
 	mouseHandler    *MouseEventHandler
 }
@@ -60,7 +59,6 @@ func NewSolarSystem() (*SolarSystem, error) {
 	width, height := screen.Size()
 	renderer := visualization.NewRendererWithDefaults(width, height)
 	uiRenderer := NewUIRenderer(screen, renderer, systemManager, state)
-	appRenderer := NewAppRenderer(screen, uiRenderer, state)
 
 	// Initialize business logic components
 	systemManagerComponent := NewSystemManager(state, planetService, uiRenderer, errorHandler, logger)
@@ -68,7 +66,7 @@ func NewSolarSystem() (*SolarSystem, error) {
 	// Initialize event handling components
 	showMoonList := func() { state.ShowMoonList() }
 	showMoonDetails := func() { /* handled by mouse handler internally */ }
-	mouseHandler := NewMouseEventHandler(state, appRenderer, showMoonList, showMoonDetails, planetService, uiRenderer)
+	mouseHandler := NewMouseEventHandler(state, uiRenderer, showMoonList, showMoonDetails, planetService)
 	eventDispatcher := NewEventDispatcher(state, mouseHandler, systemManagerComponent, planetService, uiRenderer)
 
 	return &SolarSystem{
@@ -78,8 +76,7 @@ func NewSolarSystem() (*SolarSystem, error) {
 		logger:          logger,
 		planetService:   planetService,
 		systemManager:   systemManagerComponent,
-		uiRenderer:      uiRenderer,
-		renderer:        appRenderer,
+		renderer:        uiRenderer,
 		eventDispatcher: eventDispatcher,
 		mouseHandler:    mouseHandler,
 	}, nil

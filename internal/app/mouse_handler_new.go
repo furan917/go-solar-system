@@ -10,21 +10,19 @@ import (
 
 type MouseEventHandler struct {
 	state           *AppState
-	renderer        *AppRenderer
+	renderer        *UIRenderer
 	showMoonList    func()
 	showMoonDetails func()
 	planetService   *PlanetService
-	uiRenderer      *UIRenderer
 }
 
-func NewMouseEventHandler(state *AppState, renderer *AppRenderer, showMoonList, showMoonDetails func(), planetService *PlanetService, uiRenderer *UIRenderer) *MouseEventHandler {
+func NewMouseEventHandler(state *AppState, renderer *UIRenderer, showMoonList, showMoonDetails func(), planetService *PlanetService) *MouseEventHandler {
 	return &MouseEventHandler{
 		state:           state,
 		renderer:        renderer,
 		showMoonList:    showMoonList,
 		showMoonDetails: showMoonDetails,
 		planetService:   planetService,
-		uiRenderer:      uiRenderer,
 	}
 }
 
@@ -181,12 +179,12 @@ func (meh *MouseEventHandler) handleSystemListModalClick(mouseX, mouseY int) boo
 
 	if mouseY >= systemListStartY && mouseY < systemListStartY+maxVisibleSystems {
 		systemIndex := meh.state.SystemScrollIndex + (mouseY - systemListStartY)
-		availableSystems := meh.uiRenderer.GetSystemManager().GetAvailableSystems()
+		availableSystems := meh.renderer.GetSystemManager().GetAvailableSystems()
 
 		if systemIndex < len(availableSystems) {
 			meh.state.SystemSelectedIndex = systemIndex
 			selectedSystem := availableSystems[systemIndex]
-			err := meh.uiRenderer.GetSystemManager().SwitchToSystem(selectedSystem)
+			err := meh.renderer.GetSystemManager().SwitchToSystem(selectedSystem)
 			if err == nil {
 				meh.state.ShowingSystemList = false
 			}
@@ -252,7 +250,7 @@ func (meh *MouseEventHandler) handlePlanetListClick(mouseX, mouseY int) bool {
 func (meh *MouseEventHandler) showMoonDetailsInternal() {
 	if meh.state.MoonSelectedIndex < len(meh.state.SelectedPlanet.Moons) {
 		moonData := meh.state.SelectedPlanet.Moons[meh.state.MoonSelectedIndex]
-		moonHandler := meh.uiRenderer.GetRenderer().GetMoonHandler()
+		moonHandler := meh.renderer.GetRenderer().GetMoonHandler()
 		moonName := moonHandler.GetMoonNameFromAPI(moonData)
 
 		if moonData.ID != "" {

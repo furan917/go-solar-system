@@ -549,3 +549,46 @@ func (ur *UIRenderer) drawCelestialBodyDetails(body models.CelestialBody, x, y i
 
 	return currentY
 }
+
+func (ur *UIRenderer) GetModalDimensions(screenWidth, screenHeight int, dynamicHeight ...int) (modalX, modalY, modalWidth, modalHeight int) {
+	modalWidth = constants.ModalWidth
+	if len(dynamicHeight) > 0 {
+		modalHeight = dynamicHeight[0]
+	} else {
+		modalHeight = constants.ModalHeight
+	}
+	modalX = screenWidth - modalWidth - constants.ModalMargin
+	modalY = 1
+	return
+}
+
+func (ur *UIRenderer) IsClickInModalArea(mouseX, mouseY int) bool {
+	if !ur.state.ShowingDetails && !ur.state.ShowingMoons && !ur.state.ShowingMoonDetails && !ur.state.ShowingSystemList {
+		return false
+	}
+
+	screenWidth, screenHeight := ur.screen.Size()
+	var modalX, modalY, modalWidth, modalHeight int
+
+	if ur.state.ShowingDetails {
+		contentLines := ur.calculatePlanetDetailsLines(ur.state.SelectedPlanet)
+		dynamicHeight := minimum(contentLines+6, screenHeight-4)
+		modalX, modalY, modalWidth, modalHeight = ur.GetModalDimensions(screenWidth, screenHeight, dynamicHeight)
+	} else if ur.state.ShowingMoonDetails {
+		contentLines := ur.calculateMoonDetailsLines(ur.state.SelectedMoon)
+		dynamicHeight := minimum(contentLines+6, screenHeight-4)
+		modalX, modalY, modalWidth, modalHeight = ur.GetModalDimensions(screenWidth, screenHeight, dynamicHeight)
+	} else {
+		modalX, modalY, modalWidth, modalHeight = ur.GetModalDimensions(screenWidth, screenHeight)
+	}
+
+	return mouseX >= modalX && mouseX < modalX+modalWidth &&
+		mouseY >= modalY && mouseY < modalY+modalHeight
+}
+
+func minimum(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
