@@ -296,12 +296,12 @@ func validateSystemName(name string) error {
 
 // GetSupportedFormats returns information about all supported file formats
 func (sm *SystemManager) GetSupportedFormats() []string {
-	var formats []string
+	var f []string
 	for _, format := range sm.formatRegistry.GetAllFormats() {
 		extensions := strings.Join(format.GetSupportedExtensions(), ", ")
-		formats = append(formats, fmt.Sprintf("%s (%s)", format.GetFormatName(), extensions))
+		f = append(f, fmt.Sprintf("%s (%s)", format.GetFormatName(), extensions))
 	}
-	return formats
+	return f
 }
 
 // ValidateSystemFile validates a system file using format detection

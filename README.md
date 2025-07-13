@@ -1,12 +1,15 @@
 # Go Solar System Explorer 🚀
 
-Terminal app where you can explore solar syatems.
+Terminal app where you can explore solar systems.
+
+![](./solar-system.gif)
+
 
 ## What it does
 
 - Navigate around planets with your keyboard & mouse
-- Has some neat visualizations
-- Can switch between different star systems (Solar System, Alpha Centauri, some Kepler thing, etc.)
+- Has some neat visualizations with planet information
+- Can switch between different star systems (Solar System, Alpha Centauri, etc)
 - Real-time orbital animations for our solar system
 
 ## How to run it
@@ -14,7 +17,7 @@ Terminal app where you can explore solar syatems.
 ```bash
 git clone https://github.com/furan917/go-solar-system.git
 cd go-solar-system
-go mod tidy
+go mod download
 go build
 ```
 

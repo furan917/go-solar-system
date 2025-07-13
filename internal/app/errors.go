@@ -1,6 +1,7 @@
 package app
 
 import (
+	"errors"
 	"fmt"
 	"log"
 )
@@ -77,7 +78,8 @@ func (eh *ErrorHandler) HandleError(err error) ErrorResponse {
 
 	eh.logError(err)
 
-	if appErr, ok := err.(*AppError); ok {
+	var appErr *AppError
+	if errors.As(err, &appErr) {
 		return eh.handleAppError(appErr)
 	}
 
@@ -159,13 +161,12 @@ func (eh *ErrorHandler) handleUnknownError(err error) ErrorResponse {
 
 func (eh *ErrorHandler) logError(err error) {
 	if eh.logger != nil {
-		if appErr, ok := err.(*AppError); ok {
+		var appErr *AppError
+		if errors.As(err, &appErr) {
 			eh.logger.Printf("AppError [%d]: %s", appErr.Type, appErr.Error())
 			if len(appErr.Context) > 0 {
 				eh.logger.Printf("  Context: %+v", appErr.Context)
 			}
-		} else {
-			eh.logger.Printf("Error: %v", err)
 		}
 	}
 }

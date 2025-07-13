@@ -67,6 +67,8 @@ func (ed *EventDispatcher) handleMoonDetailsKeys(ev *tcell.EventKey) {
 		case 'b', 'B':
 			ed.state.ShowMoonList()
 		}
+	default:
+		// do nothing
 	}
 }
 
@@ -91,6 +93,8 @@ func (ed *EventDispatcher) handlePlanetDetailsKeys(ev *tcell.EventKey) {
 				ed.state.ShowMoonList()
 			}
 		}
+	default:
+		// do nothing
 	}
 }
 
@@ -108,6 +112,8 @@ func (ed *EventDispatcher) handleMainNavigationKeys(ev *tcell.EventKey) {
 		}
 	case tcell.KeyRune:
 		ed.handleMainNavigationRunes(ev.Rune())
+	default:
+		// do nothing
 	}
 }
 
@@ -192,6 +198,8 @@ func (ed *EventDispatcher) handleMoonNavigation(ev *tcell.EventKey) {
 			ed.state.ShowingMoons = false
 			ed.state.ShowingDetails = true
 		}
+	default:
+		// do nothing
 	}
 }
 
@@ -229,6 +237,8 @@ func (ed *EventDispatcher) handleSystemNavigation(ev *tcell.EventKey) {
 		case 'b', 'B':
 			ed.state.ShowingSystemList = false
 		}
+	default:
+		// do nothing
 	}
 }
 
