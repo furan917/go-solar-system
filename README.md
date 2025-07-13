@@ -1,6 +1,6 @@
 # Go Solar System Explorer 🚀
 
-Yeah, so this is basically a terminal app where you can explore space stuff. It's pretty cool I guess. Still working on it though.
+Terminal app where you can explore solar syatems.
 
 ## What it does
 
@@ -18,7 +18,7 @@ go mod tidy
 go run main.go
 ```
 
-That should work. If it doesn't, uh... check if you have Go installed?
+That should work. If it doesn't, check if you have Go installed?
 
 ## Controls (the important stuff)
 
@@ -42,36 +42,17 @@ That should work. If it doesn't, uh... check if you have Go installed?
 ## Current features (aka what actually works)
 
 - ✅ All the basic planet browsing stuff
-- ✅ Real NASA/JPL data (pretty accurate)
-- ✅ Moon exploration (with way too many of Jupiter's moons)
 - ✅ Multiple star systems with actual exoplanet data
-- ✅ Binary and triple star systems (they actually orbit each other!)
-- ✅ Mouse clicking on planets (surprisingly satisfying)
-- ✅ Orbital animations that don't make your terminal explode
-- ✅ Asteroid belts because why not
+- ✅ Binary system support
+- ✅ Orbital animations
+- ✅ Asteroid and kuiper belt represented
 
 ## What's still broken/TODO
 
-- Some UI components are being refactored (it's a work in progress, okay?)
-- The help system could be better
+- Some UI components need improvement
+- The help system could be better (i.e could exist)
 - Probably need more error handling
-- Could use more star systems
-- Maybe add export functionality someday
-
-## Architecture (for the nerds)
-
-```
-├── main.go                    # Entry point
-├── internal/
-│   ├── models/               # Planet/moon data structures
-│   ├── api/                  # Talks to NASA APIs
-│   ├── visualization/        # Makes pretty terminal graphics
-│   ├── systems/              # Star system management
-│   ├── ui/                   # Modal components (new hotness)
-│   └── app/                  # Main app logic (some legacy stuff)
-```
-
-The code follows some clean architecture principles, mostly. There's a bit of legacy code hanging around that I'm slowly cleaning up.
+- Could use more star systems 
 
 ## Testing
 
