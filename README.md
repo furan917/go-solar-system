@@ -4,11 +4,10 @@ Yeah, so this is basically a terminal app where you can explore space stuff. It'
 
 ## What it does
 
-- Navigate around planets with your keyboard (because who needs a mouse in space?)
-- Shows you actual NASA data about planets and their moons
-- Has some neat visualizations that look surprisingly good in a terminal
+- Navigate around planets with your keyboard & mouse
+- Has some neat visualizations
 - Can switch between different star systems (Solar System, Alpha Centauri, some Kepler thing, etc.)
-- Real-time orbital animations because why not
+- Real-time orbital animations for our solar system
 
 ## How to run it
 
