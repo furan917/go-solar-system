@@ -66,7 +66,7 @@ func NewSolarSystem() (*SolarSystem, error) {
 	// Initialize event handling components
 	showMoonList := func() { state.ShowMoonList() }
 	showMoonDetails := func() { /* handled by mouse handler internally */ }
-	mouseHandler := NewMouseEventHandler(state, uiRenderer, showMoonList, showMoonDetails, planetService)
+	mouseHandler := NewMouseEventHandler(state, uiRenderer, showMoonList, showMoonDetails, planetService, systemManagerComponent)
 	eventDispatcher := NewEventDispatcher(state, mouseHandler, systemManagerComponent, planetService, uiRenderer)
 
 	return &SolarSystem{
