@@ -73,7 +73,6 @@ func NewFormatRegistry() *FormatRegistry {
 func (fr *FormatRegistry) RegisterFormat(format FileFormat) {
 	fr.formats = append(fr.formats, format)
 
-	// Register all supported extensions for this format
 	for _, ext := range format.GetSupportedExtensions() {
 		fr.handlers[ext] = format
 	}
@@ -103,7 +102,6 @@ func (fr *FormatRegistry) GetSupportedExtensions() []string {
 func (fr *FormatRegistry) DetectFormat(data []byte) (FileFormat, error) {
 	var lastError error
 
-	// Try each format until one succeeds
 	for _, format := range fr.formats {
 		if err := format.ValidateFormat(data); err == nil {
 			return format, nil

@@ -127,7 +127,7 @@ func (cor *CelestialObjectRenderer) scalePlanetSize(meanRadius float64) int {
 	// Enhanced scaling to show clear differences between planet sizes
 	logRadius := math.Log10(meanRadius)
 
-	baseSize := 1
+	var baseSize int
 	switch {
 	case logRadius >= 4.8: // >= ~63,000 km (Jupiter-class) - Much larger
 		baseSize = 3
@@ -344,12 +344,6 @@ func (cor *CelestialObjectRenderer) calculateMultipleStarPositions(stars []model
 	if len(stars) == 0 {
 		return positions
 	}
-
-	avgRadius := 0.0
-	for _, star := range stars {
-		avgRadius += float64(cor.scaleStarSize(star.MeanRadius, len(stars)))
-	}
-	avgRadius /= float64(len(stars))
 
 	ringRadius := cor.calculateMultiStarRadius(len(stars))
 

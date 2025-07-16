@@ -299,7 +299,7 @@ func (ur *UIRenderer) drawMoonDetailsModal(width, height int) {
 		currentY++
 	}
 
-	currentY = ur.drawCelestialBodyDetails(ur.state.SelectedMoon, modalX+2, currentY, detailStyle)
+	ur.drawCelestialBodyDetails(ur.state.SelectedMoon, modalX+2, currentY, detailStyle)
 
 	if ur.isAPIMoon(ur.state.SelectedMoon) {
 		ur.drawWrappedTextAt(modalX+2, modalY+modalHeight-3, tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue), "Note: Limited moon data available from API", constants.ModalContentWidth)
