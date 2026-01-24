@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.4](https://github.com/furan917/go-solar-system/compare/v1.0.3...v1.0.4) (2026-01-24)
+
+
+### Bug Fixes
+
+* add 3 new systems via json data ([75ac09d](https://github.com/furan917/go-solar-system/commit/75ac09d79579fbb39aab2aea93adc2dd456fc2c3))
+* Handle new API requirement and handle missing/invalid data ([0a0a6ca](https://github.com/furan917/go-solar-system/commit/0a0a6ca99022b4f3b9094f664ac42f494d8599d7))
+
 ## [1.0.3](https://github.com/furan917/go-solar-system/compare/v1.0.2...v1.0.3) (2026-01-24)
 
 
