@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.3](https://github.com/furan917/go-solar-system/compare/v1.0.2...v1.0.3) (2026-01-24)
+
+
+### Bug Fixes
+
+* API fallback to allow app to start, finish ui refactor I forgot about ([1fc893d](https://github.com/furan917/go-solar-system/commit/1fc893d5da435e95381353906a65425c1bf79f1b))
+
 ## [1.0.2](https://github.com/furan917/go-solar-system/compare/v1.0.1...v1.0.2) (2025-07-16)
 
 
