@@ -2,12 +2,17 @@
 // for the solar system application.
 package constants
 
-import "time"
+import (
+	"encoding/base64"
+	"time"
+)
 
 // API Configuration
 const (
 	SolarSystemAPIBase = "https://api.le-systeme-solaire.net/rest"
-	DefaultTimeout     = 10 * time.Second
+	// This is a light obscuring of a key used for ID only, its simply to avoid repo scrapers, nothing secure here
+	SolarSystemAPIKeyObfuscated = "OWprYm1pPmh3PGNpP3dubTk5dztqYjt3azhibGtoOWk8Pzhv"
+	DefaultTimeout              = 10 * time.Second
 )
 
 // UI Layout Constants
@@ -32,3 +37,16 @@ const (
 	TopLeft
 	BottomRight
 )
+
+// UnobscureKey decodes the API key. This is NOT for security - the API key is a public
+// identifier. This light obfuscation just helps avoid automated scrapers.
+func UnobscureKey(obscured string) (string, error) {
+	data, err := base64.StdEncoding.DecodeString(obscured)
+	if err != nil {
+		return "", err
+	}
+	for i := range data {
+		data[i] ^= 0x5A
+	}
+	return string(data), nil
+}
