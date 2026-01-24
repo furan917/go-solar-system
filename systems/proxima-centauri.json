@@ -1,0 +1,79 @@
+{
+  "systemName": "Proxima Centauri",
+  "description": "Closest star system to Earth with potentially habitable planets",
+  "discoveryYear": "2016-2022",
+  "distance": "4.24 light-years",
+  "galaxy": "Milky Way",
+  "bodies": [
+    {
+      "id": "proxima-centauri",
+      "name": "Proxima Centauri",
+      "englishName": "Proxima Centauri",
+      "bodyType": "Star",
+      "isPlanet": false,
+      "meanRadius": 107323,
+      "mass": {
+        "massValue": 2.427,
+        "massExponent": 29
+      },
+      "semimajorAxis": 0,
+      "sideralRotation": 10608,
+      "density": 47.1,
+      "gravity": 1584.9,
+      "discoveredBy": "Robert Innes",
+      "discoveryDate": "1915",
+      "moons": [],
+      "temperature": 2883,
+      "stellarClass": "M5.5 V",
+      "age": 4850000000
+    },
+    {
+      "id": "proxima-d",
+      "name": "Proxima Centauri d",
+      "englishName": "Proxima Centauri d",
+      "bodyType": "Planet",
+      "isPlanet": true,
+      "meanRadius": 3823,
+      "mass": {
+        "massValue": 1.553,
+        "massExponent": 24
+      },
+      "semimajorAxis": 4310475,
+      "sideralOrbit": 5.122,
+      "sideralRotation": 122.9,
+      "density": 5.5,
+      "gravity": 7.0,
+      "eccentricity": 0.04,
+      "inclination": 89.5,
+      "discoveredBy": "ESPRESSO Spectrograph",
+      "discoveryDate": "2022",
+      "moons": [],
+      "equilibriumTemperature": 320,
+      "habitableZone": false
+    },
+    {
+      "id": "proxima-b",
+      "name": "Proxima Centauri b",
+      "englishName": "Proxima Centauri b",
+      "bodyType": "Planet",
+      "isPlanet": true,
+      "meanRadius": 6817,
+      "mass": {
+        "massValue": 6.301,
+        "massExponent": 24
+      },
+      "semimajorAxis": 7265031,
+      "sideralOrbit": 11.18427,
+      "sideralRotation": 268.4,
+      "density": 5.4,
+      "gravity": 10.7,
+      "eccentricity": 0.11,
+      "inclination": 89.0,
+      "discoveredBy": "European Southern Observatory",
+      "discoveryDate": "2016",
+      "moons": [],
+      "equilibriumTemperature": 234,
+      "habitableZone": true
+    }
+  ]
+}
