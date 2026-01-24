@@ -5,6 +5,7 @@ import (
     "strings"
 
     "github.com/furan917/go-solar-system/internal/models"
+    "github.com/furan917/go-solar-system/internal/ui"
     "github.com/gdamore/tcell/v2"
 )
 
@@ -124,7 +125,7 @@ func (meh *MouseEventHandler) handleInstructionBarClick(mouseX, mouseY int) bool
 func (meh *MouseEventHandler) handleMoonDetailsModalClick(mouseX, mouseY int) bool {
     screenWidth, screenHeight := meh.renderer.screen.Size()
     contentLines := meh.renderer.calculateMoonDetailsLines(meh.state.SelectedMoon)
-    dynamicHeight := minimum(contentLines+6, screenHeight-4)
+    dynamicHeight := ui.Minimum(contentLines+6, screenHeight-4)
     modalX, modalY, modalWidth, modalHeight := meh.renderer.GetModalDimensions(screenWidth, screenHeight, dynamicHeight)
 
     if mouseX < modalX || mouseX >= modalX+modalWidth || mouseY < modalY || mouseY >= modalY+modalHeight {
@@ -205,7 +206,7 @@ func (meh *MouseEventHandler) handleSystemListModalClick(mouseX, mouseY int) boo
 func (meh *MouseEventHandler) handlePlanetDetailsModalClick(mouseX, mouseY int) bool {
     screenWidth, screenHeight := meh.renderer.screen.Size()
     contentLines := meh.renderer.calculatePlanetDetailsLines(meh.state.SelectedPlanet)
-    dynamicHeight := minimum(contentLines+6, screenHeight-4)
+    dynamicHeight := ui.Minimum(contentLines+6, screenHeight-4)
     modalX, modalY, modalWidth, modalHeight := meh.renderer.GetModalDimensions(screenWidth, screenHeight, dynamicHeight)
 
     if mouseX < modalX || mouseX >= modalX+modalWidth || mouseY < modalY || mouseY >= modalY+modalHeight {

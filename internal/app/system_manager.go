@@ -28,9 +28,6 @@ func NewSystemManager(state *AppState, planetService *PlanetService, uiRenderer 
 func (sm *SystemManager) LoadCurrentSystem() error {
 	defer func() {
 		if r := recover(); r != nil {
-			if logger, ok := sm.logger.(interface{ Printf(string, ...interface{}) }); ok {
-				logger.Printf("Panic in loadCurrentSystem: %v", r)
-			}
 		}
 	}()
 
@@ -39,8 +36,13 @@ func (sm *SystemManager) LoadCurrentSystem() error {
 	if currentSystem == "solar-system" {
 		planets, err := sm.planetService.GetClient().GetPlanets()
 		if err != nil {
-			return NewAPIError("failed to load Solar System from API", err).
-				WithContext("system", currentSystem)
+			fallbackErr := sm.uiRenderer.GetSystemManager().SwitchToSystem("alpha-centauri")
+			if fallbackErr != nil {
+				return NewAPIError("Solar System API unavailable, fallback failed", err).
+					WithContext("system", currentSystem)
+			}
+
+			return sm.LoadCurrentSystem()
 		}
 
 		if len(planets) == 0 {

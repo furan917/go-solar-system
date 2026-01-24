@@ -1,6 +1,8 @@
 package ui
 
 import (
+	"strings"
+
 	"github.com/furan917/go-solar-system/internal/constants"
 	"github.com/gdamore/tcell/v2"
 )
@@ -59,6 +61,9 @@ func NewModal(screen tcell.Screen, config ModalConfig) *Modal {
 }
 
 func (m *Modal) Render() {
+	if m.width <= 0 || m.height <= 3 {
+		return
+	}
 	m.drawBackground()
 	m.drawBorder()
 	m.drawTitle()
@@ -122,4 +127,45 @@ func (m *Modal) drawTextAt(x, y int, style tcell.Style, text string) {
 func (m *Modal) DrawInstructions(instructions string) {
 	instructionStyle := tcell.StyleDefault.Foreground(tcell.ColorLightBlue).Background(tcell.ColorDarkBlue)
 	m.drawTextAt(m.x+2, m.y+m.height-2, instructionStyle, instructions)
+}
+
+func (m *Modal) WrapText(text string, maxWidth int) []string {
+	if len(text) <= maxWidth {
+		return []string{text}
+	}
+
+	var lines []string
+	words := strings.Fields(text)
+	currentLine := ""
+
+	for _, word := range words {
+		if len(currentLine)+1+len(word) > maxWidth {
+			if currentLine != "" {
+				lines = append(lines, currentLine)
+				currentLine = word
+			} else {
+				lines = append(lines, word[:maxWidth-3]+"...")
+				currentLine = ""
+			}
+		} else {
+			if currentLine == "" {
+				currentLine = word
+			} else {
+				currentLine += " " + word
+			}
+		}
+	}
+
+	if currentLine != "" {
+		lines = append(lines, currentLine)
+	}
+
+	return lines
+}
+
+func Minimum(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

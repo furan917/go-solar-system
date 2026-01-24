@@ -2,8 +2,12 @@ package ui
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/furan917/go-solar-system/internal/constants"
+	"github.com/furan917/go-solar-system/internal/display"
 	"github.com/furan917/go-solar-system/internal/models"
+	"github.com/furan917/go-solar-system/internal/visualization"
 	"github.com/gdamore/tcell/v2"
 )
 
@@ -13,12 +17,20 @@ type MoonListModal struct {
 	moonNames     []string
 	selectedIndex int
 	scrollIndex   int
+	renderer      *visualization.Renderer
 }
 
-func NewMoonListModal(screen tcell.Screen, planet models.CelestialBody, moonNames []string) *MoonListModal {
+func NewMoonListModal(
+	screen tcell.Screen,
+	planet models.CelestialBody,
+	moonNames []string,
+	selectedIndex int,
+	scrollIndex int,
+	renderer *visualization.Renderer,
+) *MoonListModal {
 	config := ModalConfig{
-		Width:    60,
-		Height:   20,
+		Width:    constants.ModalWidth,
+		Height:   constants.ModalHeight,
 		Title:    fmt.Sprintf(" %s Moons (%d total) ", planet.EnglishName, len(planet.Moons)),
 		Content:  []string{},
 		Position: constants.TopRight,
@@ -30,66 +42,74 @@ func NewMoonListModal(screen tcell.Screen, planet models.CelestialBody, moonName
 		Modal:         modal,
 		planet:        planet,
 		moonNames:     moonNames,
-		selectedIndex: 0,
-		scrollIndex:   0,
+		selectedIndex: selectedIndex,
+		scrollIndex:   scrollIndex,
+		renderer:      renderer,
 	}
 }
 
 func (mlm *MoonListModal) Render() {
 	mlm.Modal.Render()
 	mlm.renderMoonList()
+	mlm.renderScrollIndicators()
 	mlm.DrawInstructions("↑/↓ to navigate • Enter to select • Escape/'b' to go back")
 }
 
 func (mlm *MoonListModal) renderMoonList() {
-	visibleLines := mlm.height - 6
+	visibleItems := constants.MaxVisibleItems
+	startY := mlm.y + 3
 
-	for i := 0; i < visibleLines && i+mlm.scrollIndex < len(mlm.moonNames); i++ {
-		lineIndex := i + mlm.scrollIndex
-		moonName := mlm.moonNames[lineIndex]
+	for i := 0; i < visibleItems && i+mlm.scrollIndex < len(mlm.moonNames); i++ {
+		moonIndex := i + mlm.scrollIndex
+		moonName := mlm.moonNames[moonIndex]
 
 		style := mlm.contentStyle
-		if lineIndex == mlm.selectedIndex {
+		if moonIndex == mlm.selectedIndex {
 			style = style.Reverse(true).Bold(true)
 		}
 
-		text := fmt.Sprintf("%d. %s", lineIndex+1, moonName)
-		mlm.drawTextAt(mlm.x+2, mlm.y+3+i, style, text)
+		prefix := "  "
+		if moonIndex == mlm.selectedIndex {
+			prefix = "► "
+		}
+
+		text := fmt.Sprintf("%s%d. %s", prefix, moonIndex+1, moonName)
+		mlm.drawTextAt(mlm.x+2, startY+i, style, text)
 	}
 }
 
-func (mlm *MoonListModal) HandleNavigation(key tcell.Key) {
-	switch key {
-	case tcell.KeyUp:
-		if mlm.selectedIndex > 0 {
-			mlm.selectedIndex--
-			if mlm.selectedIndex < mlm.scrollIndex {
-				mlm.scrollIndex = mlm.selectedIndex
-			}
-		}
-	case tcell.KeyDown:
-		if mlm.selectedIndex < len(mlm.moonNames)-1 {
-			mlm.selectedIndex++
-			visibleLines := mlm.height - 6
-			if mlm.selectedIndex >= mlm.scrollIndex+visibleLines {
-				mlm.scrollIndex = mlm.selectedIndex - visibleLines + 1
-			}
-		}
-	default:
-	}
-}
+func (mlm *MoonListModal) renderScrollIndicators() {
+	visibleItems := constants.MaxVisibleItems
+	startY := mlm.y + 3
+	modalWidth := mlm.width
 
-func (mlm *MoonListModal) GetSelectedMoon() models.CelestialBody {
-	if mlm.selectedIndex < len(mlm.planet.Moons) {
-		moon := mlm.planet.Moons[mlm.selectedIndex]
-		return models.CelestialBody{
-			ID:          moon.ID,
-			Name:        moon.Name,
-			EnglishName: moon.EnglishName,
-			BodyType:    "Moon",
-		}
+	scrollAreaStyle := tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue)
+
+	for i := 0; i < visibleItems; i++ {
+		mlm.screen.SetContent(mlm.x+modalWidth-3, startY+i, '│', nil, scrollAreaStyle)
 	}
-	return models.CelestialBody{}
+
+	if len(mlm.moonNames) > visibleItems {
+		totalScrollable := len(mlm.moonNames) - visibleItems
+		scrollPosition := int(float64(mlm.scrollIndex) / float64(totalScrollable) * float64(visibleItems-1))
+		mlm.screen.SetContent(mlm.x+modalWidth-3, startY+scrollPosition, '█', nil, tcell.StyleDefault.Foreground(tcell.ColorWhite).Background(tcell.ColorDarkBlue))
+	}
+
+	if mlm.scrollIndex > 0 {
+		mlm.drawTextAt(mlm.x+modalWidth-2, mlm.y+2, tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorDarkBlue).Bold(true), "↑")
+		mlm.drawTextAt(mlm.x+modalWidth-8, mlm.y+2, tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue), "More")
+	}
+	if mlm.scrollIndex+visibleItems < len(mlm.moonNames) {
+		mlm.drawTextAt(mlm.x+modalWidth-2, mlm.y+mlm.height-3, tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorDarkBlue).Bold(true), "↓")
+		mlm.drawTextAt(mlm.x+modalWidth-8, mlm.y+mlm.height-3, tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue), "More")
+	}
+
+	statusStyle := tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue)
+	statusText := fmt.Sprintf("Showing %d-%d of %d moons",
+		mlm.scrollIndex+1,
+		Minimum(mlm.scrollIndex+visibleItems, len(mlm.moonNames)),
+		len(mlm.moonNames))
+	mlm.drawTextAt(mlm.x+2, mlm.y+mlm.height-3, statusStyle, statusText)
 }
 
 type MoonDetailsModal struct {
@@ -99,11 +119,11 @@ type MoonDetailsModal struct {
 }
 
 func NewMoonDetailsModal(screen tcell.Screen, moon, planet models.CelestialBody) *MoonDetailsModal {
-	content := generateMoonDetails(moon)
+	content := generateMoonDetailsFromFields(moon, planet)
 
 	config := ModalConfig{
-		Width:    60,
-		Height:   minimum(len(content)+6, 25),
+		Width:    constants.ModalWidth,
+		Height:   Minimum(len(content)+6, 25),
 		Title:    fmt.Sprintf(" %s (Moon of %s) ", moon.EnglishName, planet.EnglishName),
 		Content:  content,
 		Position: constants.TopRight,
@@ -120,45 +140,48 @@ func NewMoonDetailsModal(screen tcell.Screen, moon, planet models.CelestialBody)
 
 func (mdm *MoonDetailsModal) Render() {
 	mdm.Modal.Render()
-	mdm.DrawInstructions("Escape/'b' to go back")
+
+	if isAPIMoon(mdm.moon) {
+		noteStyle := tcell.StyleDefault.Foreground(tcell.ColorGray).Background(tcell.ColorDarkBlue)
+		wrappedLines := mdm.WrapText("Note: Limited moon data available from API", constants.ModalContentWidth)
+		currentY := mdm.y + mdm.height - 3
+		for _, line := range wrappedLines {
+			mdm.drawTextAt(mdm.x+2, currentY, noteStyle, line)
+			currentY++
+		}
+	}
+
+	mdm.DrawInstructions("Press Enter, Escape, or 'b' to go back to moon list")
 }
 
-func generateMoonDetails(moon models.CelestialBody) []string {
+func generateMoonDetailsFromFields(moon models.CelestialBody, planet models.CelestialBody) []string {
 	var content []string
 
 	content = append(content, "Type: Moon")
+	content = append(content, fmt.Sprintf("Orbits: %s", planet.EnglishName))
 
-	if moon.MeanRadius > 0 {
-		content = append(content, fmt.Sprintf("Radius: %.0f km", moon.MeanRadius))
+	if moon.Name != "" && moon.Name != moon.EnglishName {
+		content = append(content, fmt.Sprintf("Original Name: %s", moon.Name))
 	}
 
-	if moon.Mass.MassValue > 0 {
-		content = append(content, fmt.Sprintf("Mass: %.2f × 10^%d kg", moon.Mass.MassValue, moon.Mass.MassExponent))
+	stringFields := display.GetCelestialBodyStringFields()
+	for _, field := range stringFields {
+		if field.Condition(moon) && field.Label != "Type" {
+			content = append(content, field.FormatStringFieldValue(moon))
+		}
 	}
 
-	if moon.Density > 0 {
-		content = append(content, fmt.Sprintf("Density: %.2f g/cm³", moon.Density))
-	}
-
-	if moon.Gravity > 0 {
-		content = append(content, fmt.Sprintf("Gravity: %.1f m/s²", moon.Gravity))
-	}
-
-	if moon.SemimajorAxis > 0 {
-		content = append(content, fmt.Sprintf("Distance from Planet: %.0f km", moon.SemimajorAxis))
-	}
-
-	if moon.SideralOrbit > 0 {
-		content = append(content, fmt.Sprintf("Orbital Period: %.2f days", moon.SideralOrbit))
-	}
-
-	if moon.DiscoveredBy != "" {
-		content = append(content, fmt.Sprintf("Discovered by: %s", moon.DiscoveredBy))
-	}
-
-	if moon.DiscoveryDate != "" {
-		content = append(content, fmt.Sprintf("Discovery Date: %s", moon.DiscoveryDate))
+	fields := display.GetCelestialBodyFields()
+	for _, field := range fields {
+		if field.Condition(moon) {
+			content = append(content, field.FormatFieldValue(moon))
+		}
 	}
 
 	return content
+}
+
+func isAPIMoon(moon models.CelestialBody) bool {
+	return moon.MeanRadius > 0 || moon.Mass.MassValue > 0 || moon.Density > 0 ||
+		(moon.ID != "" && !strings.Contains(moon.ID, "moon"))
 }

@@ -14,14 +14,19 @@ type SystemModal struct {
 	systemInfo    []string
 }
 
-func NewSystemModal(screen tcell.Screen, systemManager *systems.SystemManager) *SystemModal {
+func NewSystemModal(
+	screen tcell.Screen,
+	systemManager *systems.SystemManager,
+	selectedIndex int,
+	scrollIndex int,
+) *SystemModal {
 	systemInfo, _ := systemManager.ListSystemsWithInfo()
 
 	config := ModalConfig{
 		Width:    80,
 		Height:   20,
 		Title:    " 🌌 Star System Selection ",
-		Content:  systemInfo,
+		Content:  []string{},
 		Position: constants.TopRight,
 	}
 
@@ -31,8 +36,8 @@ func NewSystemModal(screen tcell.Screen, systemManager *systems.SystemManager) *
 		Modal:         modal,
 		systemManager: systemManager,
 		systemInfo:    systemInfo,
-		selectedIndex: 0,
-		scrollIndex:   0,
+		selectedIndex: selectedIndex,
+		scrollIndex:   scrollIndex,
 	}
 }
 
@@ -41,7 +46,7 @@ func (sm *SystemModal) Render() {
 
 	sm.renderSystemList()
 
-	sm.DrawInstructions("↑/↓ to navigate • Enter to select • Escape to cancel")
+	sm.DrawInstructions("↑/↓ to navigate • Enter to select • Escape/'b' to cancel")
 }
 
 func (sm *SystemModal) renderSystemList() {
@@ -56,35 +61,18 @@ func (sm *SystemModal) renderSystemList() {
 			style = style.Reverse(true).Bold(true)
 		}
 
-		sm.drawTextAt(sm.x+2, sm.y+3+i, style, line)
-	}
-}
+		maxLineLength := sm.width - 10
+		wrappedLines := sm.WrapText(line, maxLineLength)
 
-func (sm *SystemModal) HandleNavigation(key tcell.Key) {
-	switch key {
-	case tcell.KeyUp:
-		if sm.selectedIndex > 0 {
-			sm.selectedIndex--
-			if sm.selectedIndex < sm.scrollIndex {
-				sm.scrollIndex = sm.selectedIndex
-			}
+		if len(wrappedLines) > 0 {
+			sm.drawTextAt(sm.x+2, sm.y+3+i, style, wrappedLines[0])
 		}
-	case tcell.KeyDown:
-		if sm.selectedIndex < len(sm.systemInfo)-1 {
-			sm.selectedIndex++
-			visibleLines := sm.height - 6
-			if sm.selectedIndex >= sm.scrollIndex+visibleLines {
-				sm.scrollIndex = sm.selectedIndex - visibleLines + 1
-			}
-		}
-	default:
 	}
-}
 
-func (sm *SystemModal) GetSelectedSystem() string {
-	availableSystems := sm.systemManager.GetAvailableSystems()
-	if sm.selectedIndex < len(availableSystems) {
-		return availableSystems[sm.selectedIndex]
+	if sm.scrollIndex > 0 {
+		sm.drawTextAt(sm.x+sm.width-2, sm.y+2, tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorDarkBlue).Bold(true), "↑")
 	}
-	return ""
+	if sm.scrollIndex+visibleLines < len(sm.systemInfo) {
+		sm.drawTextAt(sm.x+sm.width-2, sm.y+sm.height-3, tcell.StyleDefault.Foreground(tcell.ColorYellow).Background(tcell.ColorDarkBlue).Bold(true), "↓")
+	}
 }
