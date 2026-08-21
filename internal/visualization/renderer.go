@@ -3,7 +3,6 @@ package visualization
 import (
 	"fmt"
 
-	"github.com/fatih/color"
 	"github.com/furan917/go-solar-system/internal/constants"
 	"github.com/furan917/go-solar-system/internal/models"
 	"github.com/gdamore/tcell/v2"
@@ -35,6 +34,7 @@ type Renderer struct {
 	debrisBeltRenderer *DebrisBeltRenderer
 	distanceScaler     *DistanceScaler
 	moonHandler        *MoonHandler
+	simpleOrbits       bool
 }
 
 // NewRenderer creates a renderer with dependency injection
@@ -49,7 +49,25 @@ func NewRenderer(width, height int, deps RendererDependencies) *Renderer {
 		debrisBeltRenderer: deps.DebrisBeltRenderer,
 		distanceScaler:     deps.DistanceScaler,
 		moonHandler:        deps.MoonHandler,
+		simpleOrbits:       SimpleOrbitsRequested(),
 	}
+}
+
+// newOrbitCanvas returns a braille canvas, or nil when plain orbits are requested
+func (r *Renderer) newOrbitCanvas(width, height int) *BrailleCanvas {
+	if r.simpleOrbits {
+		return nil
+	}
+	return NewBrailleCanvas(width, height)
+}
+
+// renderOrbit draws one orbital path into the canvas, or the grid when canvas is nil
+func (r *Renderer) renderOrbit(grid [][]rune, canvas *BrailleCanvas, centerX, centerY int, radius float64) {
+	if canvas == nil {
+		r.celestialRenderer.RenderOrbit(grid, centerX, centerY, radius)
+		return
+	}
+	r.celestialRenderer.RenderOrbitBraille(canvas, centerX, centerY, radius)
 }
 
 // NewRendererWithDefaults creates a renderer with default dependencies
@@ -78,6 +96,7 @@ func (r *Renderer) RenderSolarSystemData(planets []models.CelestialBody, width, 
 	r.celestialRenderer.UpdateDimensions(r.width, r.height)
 
 	grid := r.createGrid(width, height)
+	canvas := r.newOrbitCanvas(width, height)
 
 	stars, actualPlanets := r.separateStarsAndPlanets(planets)
 
@@ -97,9 +116,13 @@ func (r *Renderer) RenderSolarSystemData(planets []models.CelestialBody, width, 
 
 		radius := r.distanceScaler.ScaleDistance(planet.SemimajorAxis, actualPlanets)
 
-		r.celestialRenderer.RenderOrbit(grid, centerX, centerY, radius)
+		r.renderOrbit(grid, canvas, centerX, centerY, radius)
 
 		r.celestialRenderer.RenderPlanet(grid, centerX, centerY, planet, radius)
+	}
+
+	if canvas != nil {
+		canvas.CompositeInto(grid)
 	}
 
 	return grid
@@ -114,6 +137,7 @@ func (r *Renderer) RenderSolarSystemDataWithPositions(planets []models.Celestial
 	r.celestialRenderer.UpdateDimensions(screenWidth, screenHeight)
 
 	grid := r.createGrid(width, height)
+	canvas := r.newOrbitCanvas(width, height)
 
 	stars, actualPlanets := r.separateStarsAndPlanets(planets)
 
@@ -143,7 +167,7 @@ func (r *Renderer) RenderSolarSystemDataWithPositions(planets []models.Celestial
 
 		radius := r.distanceScaler.ScaleDistance(planet.SemimajorAxis, actualPlanets)
 
-		r.celestialRenderer.RenderOrbit(grid, centerX, centerY, radius)
+		r.renderOrbit(grid, canvas, centerX, centerY, radius)
 
 		angle := r.celestialRenderer.GetOrbitalAngle(planet)
 		px, py := r.circleDrawer.CalculatePosition(centerX, centerY, radius, angle)
@@ -157,6 +181,10 @@ func (r *Renderer) RenderSolarSystemDataWithPositions(planets []models.Celestial
 		}
 
 		r.celestialRenderer.RenderPlanet(grid, centerX, centerY, planet, radius)
+	}
+
+	if canvas != nil {
+		canvas.CompositeInto(grid)
 	}
 
 	return grid, planetPositions
@@ -226,64 +254,6 @@ func (r *Renderer) GetColorForSymbol(symbol rune) tcell.Color {
 	return r.symbolToTcellColor(symbol)
 }
 
-func (r *Renderer) getColorForSymbol(symbol rune) *color.Color {
-	knownColorMap := map[rune]*color.Color{
-		'☿': color.New(color.FgHiBlack, color.Bold),   // Mercury
-		'♀': color.New(color.FgYellow, color.Bold),    // Venus
-		'♁': color.New(color.FgBlue, color.Bold),      // Earth
-		'♂': color.New(color.FgRed, color.Bold),       // Mars
-		'♃': color.New(color.FgHiYellow, color.Bold),  // Jupiter
-		'♄': color.New(color.FgHiMagenta, color.Bold), // Saturn
-		'♅': color.New(color.FgCyan, color.Bold),      // Uranus
-		'♆': color.New(color.FgBlue, color.Bold),      // Neptune
-		'♇': color.New(color.FgHiBlack, color.Bold),   // Pluto
-		'☉': color.New(color.FgYellow, color.Bold),    // Sun
-	}
-
-	if planetColor, exists := knownColorMap[symbol]; exists {
-		return planetColor
-	}
-
-	return r.generateGenericColor(symbol)
-}
-
-// generateGenericColor creates a color for unknown celestial bodies
-func (r *Renderer) generateGenericColor(symbol rune) *color.Color {
-	colors := []*color.Color{
-		color.New(color.FgWhite, color.Bold),
-		color.New(color.FgHiWhite, color.Bold),
-		color.New(color.FgGreen, color.Bold),
-		color.New(color.FgHiGreen, color.Bold),
-		color.New(color.FgMagenta, color.Bold),
-		color.New(color.FgHiMagenta, color.Bold),
-		color.New(color.FgCyan, color.Bold),
-		color.New(color.FgHiCyan, color.Bold),
-		color.New(color.FgRed, color.Bold),
-		color.New(color.FgHiRed, color.Bold),
-	}
-
-	index := int(symbol) % len(colors)
-	return colors[index]
-}
-
-// getPlanetColors returns a map of planet names to colors for DRY color management
-func (r *Renderer) getPlanetColors() map[string]*color.Color {
-	knownColors := map[string]*color.Color{
-		"Mercury": color.New(color.FgHiBlack, color.Bold),
-		"Venus":   color.New(color.FgYellow, color.Bold),
-		"Earth":   color.New(color.FgBlue, color.Bold),
-		"Mars":    color.New(color.FgRed, color.Bold),
-		"Jupiter": color.New(color.FgHiYellow, color.Bold),
-		"Saturn":  color.New(color.FgHiMagenta, color.Bold),
-		"Uranus":  color.New(color.FgCyan, color.Bold),
-		"Neptune": color.New(color.FgBlue, color.Bold),
-		"Pluto":   color.New(color.FgHiBlack, color.Bold),
-		"Sun":     color.New(color.FgYellow, color.Bold),
-	}
-
-	return knownColors
-}
-
 func (r *Renderer) symbolToTcellColor(symbol rune) tcell.Color {
 	colorMap := map[rune]tcell.Color{
 		'☿': tcell.ColorGray,   // Mercury
@@ -308,18 +278,6 @@ func (r *Renderer) symbolToTcellColor(symbol rune) tcell.Color {
 	}
 
 	return tcell.ColorWhite
-}
-
-func (r *Renderer) getColoredPlanet(planet models.CelestialBody) string {
-	symbol := r.GetPlanetSymbol(planet.EnglishName)
-	colors := r.getPlanetColors()
-
-	if planetColor, exists := colors[planet.EnglishName]; exists {
-		return planetColor.Sprint(string(symbol))
-	}
-
-	planetColor := r.generateGenericColor(symbol)
-	return planetColor.Sprint(string(symbol))
 }
 
 func (r *Renderer) RenderPlanetDetails(planet models.CelestialBody) []string {

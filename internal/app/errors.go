@@ -208,7 +208,7 @@ func RecoverFromPanic() error {
 		case error:
 			return NewAppError(ErrorTypeSystem, "Panic recovered", v)
 		case string:
-			return NewAppError(ErrorTypeSystem, "Panic recovered", fmt.Errorf(v))
+			return NewAppError(ErrorTypeSystem, "Panic recovered", errors.New(v))
 		default:
 			return NewAppError(ErrorTypeSystem, "Panic recovered", fmt.Errorf("%v", v))
 		}

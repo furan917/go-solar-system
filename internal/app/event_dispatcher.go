@@ -151,17 +151,20 @@ func (ed *EventDispatcher) showPlanetDetails(planet models.CelestialBody) {
 
 func (ed *EventDispatcher) showSystemList() {
 	ed.state.ShowingSystemList = true
+	ed.state.ClearSystemFilter()
 	ed.state.SystemScrollIndex = 0
 	ed.state.SystemSelectedIndex = 0
 
-	availableSystems := ed.uiRenderer.GetSystemManager().GetAvailableSystems()
+	entries := ed.uiRenderer.GetFilteredSystems()
 	currentSystem := ed.uiRenderer.GetSystemManager().GetCurrentSystem()
-	for i, system := range availableSystems {
-		if system == currentSystem {
+	for i, entry := range entries {
+		if entry.Name == currentSystem {
 			ed.state.SystemSelectedIndex = i
 			break
 		}
 	}
+
+	ed.state.ClampSystemSelection(len(entries))
 }
 
 func (ed *EventDispatcher) handleMoonNavigation(ev *tcell.EventKey) {
@@ -204,42 +207,84 @@ func (ed *EventDispatcher) handleMoonNavigation(ev *tcell.EventKey) {
 }
 
 func (ed *EventDispatcher) handleSystemNavigation(ev *tcell.EventKey) {
-	availableSystems := ed.uiRenderer.GetSystemManager().GetAvailableSystems()
-	systemCount := len(availableSystems)
+	if ev.Key() == tcell.KeyCtrlC {
+		ed.state.SetRunning(false)
+		return
+	}
 
-	if systemCount == 0 {
+	if ed.state.SystemFilterActive {
+		ed.handleSystemFilterKeys(ev)
 		return
 	}
 
 	switch ev.Key() {
 	case tcell.KeyEscape:
-		ed.state.ShowingSystemList = false
+		ed.closeSystemList()
 	case tcell.KeyUp:
-		if ed.state.SystemSelectedIndex > 0 {
-			ed.state.SystemSelectedIndex--
-			if ed.state.SystemSelectedIndex < ed.state.SystemScrollIndex {
-				ed.state.SystemScrollIndex = ed.state.SystemSelectedIndex
-			}
-		}
+		ed.navigateSystems(-1)
 	case tcell.KeyDown:
-		if ed.state.SystemSelectedIndex < systemCount-1 {
-			ed.state.SystemSelectedIndex++
-			if ed.state.SystemSelectedIndex >= ed.state.SystemScrollIndex+10 {
-				ed.state.SystemScrollIndex = ed.state.SystemSelectedIndex - 9
-			}
-		}
+		ed.navigateSystems(1)
 	case tcell.KeyEnter:
 		ed.systemManager.SwitchToSelectedSystem()
 	case tcell.KeyRune:
 		switch ev.Rune() {
+		case '/':
+			ed.state.SystemFilterActive = true
 		case 'q', 'Q':
 			ed.state.SetRunning(false)
 		case 'b', 'B':
-			ed.state.ShowingSystemList = false
+			ed.closeSystemList()
 		}
 	default:
 		// do nothing
 	}
+}
+
+// handleSystemFilterKeys consumes keys while the system filter is being typed
+func (ed *EventDispatcher) handleSystemFilterKeys(ev *tcell.EventKey) {
+	switch ev.Key() {
+	case tcell.KeyEscape:
+		ed.state.ClearSystemFilter()
+		ed.clampSystemSelection()
+	case tcell.KeyUp:
+		ed.navigateSystems(-1)
+	case tcell.KeyDown:
+		ed.navigateSystems(1)
+	case tcell.KeyEnter:
+		ed.systemManager.SwitchToSelectedSystem()
+	case tcell.KeyBackspace, tcell.KeyBackspace2:
+		ed.setSystemFilter(trimLastRune(ed.state.SystemFilter))
+	case tcell.KeyRune:
+		ed.setSystemFilter(ed.state.SystemFilter + string(ev.Rune()))
+	default:
+		// do nothing
+	}
+}
+
+func (ed *EventDispatcher) setSystemFilter(filter string) {
+	ed.state.SystemFilter = filter
+	ed.clampSystemSelection()
+}
+
+func (ed *EventDispatcher) navigateSystems(direction int) {
+	ed.state.HandleSystemNavigation(direction, len(ed.uiRenderer.GetFilteredSystems()))
+}
+
+func (ed *EventDispatcher) clampSystemSelection() {
+	ed.state.ClampSystemSelection(len(ed.uiRenderer.GetFilteredSystems()))
+}
+
+func (ed *EventDispatcher) closeSystemList() {
+	ed.state.ShowingSystemList = false
+	ed.state.ClearSystemFilter()
+}
+
+func trimLastRune(s string) string {
+	runes := []rune(s)
+	if len(runes) == 0 {
+		return ""
+	}
+	return string(runes[:len(runes)-1])
 }
 
 func (ed *EventDispatcher) showMoonDetails() {

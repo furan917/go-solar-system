@@ -173,15 +173,19 @@ func (sm *SystemManager) SwitchToSelectedSystem() {
 		}
 	}()
 
-	availableSystems := sm.uiRenderer.GetSystemManager().GetAvailableSystems()
-	if sm.state.SystemSelectedIndex >= len(availableSystems) {
-		sm.errorHandler.HandleError(NewValidationError("invalid system index", nil).
-			WithContext("index", sm.state.SystemSelectedIndex).
-			WithContext("available", len(availableSystems)))
+	entries := sm.uiRenderer.GetFilteredSystems()
+	if len(entries) == 0 {
 		return
 	}
 
-	selectedSystem := availableSystems[sm.state.SystemSelectedIndex]
+	if sm.state.SystemSelectedIndex < 0 || sm.state.SystemSelectedIndex >= len(entries) {
+		sm.errorHandler.HandleError(NewValidationError("invalid system index", nil).
+			WithContext("index", sm.state.SystemSelectedIndex).
+			WithContext("available", len(entries)))
+		return
+	}
+
+	selectedSystem := entries[sm.state.SystemSelectedIndex].Name
 
 	if err := sm.uiRenderer.GetSystemManager().SwitchToSystem(selectedSystem); err != nil {
 		sm.errorHandler.HandleError(NewSystemError("failed to switch system", err).
@@ -208,6 +212,7 @@ func (sm *SystemManager) SwitchToSelectedSystem() {
 
 	sm.state.SelectedIndex = 0
 	sm.state.ShowingSystemList = false
+	sm.state.ClearSystemFilter()
 }
 
 func (sm *SystemManager) isOurSolarSystem(planets []models.CelestialBody) bool {

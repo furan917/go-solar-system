@@ -23,6 +23,12 @@ const (
 	ModalHeight       = 20
 	MaxVisibleItems   = 10
 
+	SystemModalWidth  = 80
+	SystemModalHeight = 20
+
+	// SystemListVisibleItems is the number of system rows the modal draws
+	SystemListVisibleItems = SystemModalHeight - 6
+
 	AspectRatio = 2.0
 
 	DisplayUpdateRate = 100 * time.Millisecond

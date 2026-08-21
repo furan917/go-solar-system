@@ -32,6 +32,11 @@ That should work. If it doesn't, check if you have Go installed?
 - S = switch between star systems
 - Q = quit (or Escape, whatever)
 
+**In the system list:**
+- Up/Down = navigate, Enter = switch to that system
+- / = filter the list, then type. Backspace edits, Escape clears the filter
+- Escape/B = close the list
+
 **When looking at planet details:**
 - M = view moons (if the planet has any)
 - B = go back
@@ -49,6 +54,8 @@ That should work. If it doesn't, check if you have Go installed?
 - ✅ Binary system support
 - ✅ Orbital animations
 - ✅ Asteroid and kuiper belt represented
+- ✅ Load your own systems from your config directory
+- ✅ Smooth sub-cell orbit curves, so it still looks right in a smaller terminal
 
 ## What's still broken/TODO
 
@@ -78,6 +85,25 @@ Uses real data from:
 - **Alpha Centauri**: Closest star system with some interesting planets
 - **Kepler-452**: Has "Earth's cousin" planet
 - **TRAPPIST-1**: 7 Earth-sized planets, pretty cool
+
+## Adding your own star systems
+
+Drop a JSON file into `~/.config/go-solar-system/systems/` and it shows up in the system list next time you start the app. No rebuild needed.
+
+```bash
+mkdir -p ~/.config/go-solar-system/systems
+cp my-system.json ~/.config/go-solar-system/systems/
+```
+
+The filename becomes the system id, and a file that matches a bundled system's name replaces it. Set `GO_SOLAR_SYSTEM_SYSTEMS_DIR` to scan an extra directory as well. See [systems/README.md](./systems/README.md) for the format.
+
+## If orbits render as empty boxes
+
+Orbit paths are drawn with braille characters, which gives them 8x the resolution of the terminal grid and keeps circles smooth in smaller windows. If your font lacks braille coverage you'll see blank boxes instead of curves. Fall back to plain dots with:
+
+```bash
+GO_SOLAR_SYSTEM_SIMPLE_ORBITS=1 go-solar-system
+```
 
 ## Contributing
 

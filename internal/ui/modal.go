@@ -5,6 +5,7 @@ import (
 
 	"github.com/furan917/go-solar-system/internal/constants"
 	"github.com/gdamore/tcell/v2"
+	"github.com/mattn/go-runewidth"
 )
 
 type Modal struct {
@@ -116,11 +117,14 @@ func (m *Modal) drawContent() {
 }
 
 func (m *Modal) drawTextAt(x, y int, style tcell.Style, text string) {
-	for i, r := range text {
-		if x+i >= m.x+m.width-2 {
+	col := 0
+	for _, r := range text {
+		width := runewidth.RuneWidth(r)
+		if x+col+width > m.x+m.width-2 {
 			break
 		}
-		m.screen.SetContent(x+i, y, r, nil, style)
+		m.screen.SetContent(x+col, y, r, nil, style)
+		col += width
 	}
 }
 
@@ -130,7 +134,7 @@ func (m *Modal) DrawInstructions(instructions string) {
 }
 
 func (m *Modal) WrapText(text string, maxWidth int) []string {
-	if len(text) <= maxWidth {
+	if runewidth.StringWidth(text) <= maxWidth {
 		return []string{text}
 	}
 
@@ -139,12 +143,12 @@ func (m *Modal) WrapText(text string, maxWidth int) []string {
 	currentLine := ""
 
 	for _, word := range words {
-		if len(currentLine)+1+len(word) > maxWidth {
+		if runewidth.StringWidth(currentLine)+1+runewidth.StringWidth(word) > maxWidth {
 			if currentLine != "" {
 				lines = append(lines, currentLine)
 				currentLine = word
 			} else {
-				lines = append(lines, word[:maxWidth-3]+"...")
+				lines = append(lines, runewidth.Truncate(word, maxWidth, "..."))
 				currentLine = ""
 			}
 		} else {
