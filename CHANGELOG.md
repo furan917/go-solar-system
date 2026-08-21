@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.0](https://github.com/furan917/go-solar-system/compare/v1.0.4...v1.1.0) (2026-08-21)
+
+
+### Features
+
+* large visual updates for lower res screens + extensibility fixes ([871b4c2](https://github.com/furan917/go-solar-system/commit/871b4c2493040328330f33b9d531bf073f513e5a))
+* large visual updates for lower res screens + extensibility fixes ([a6de1e0](https://github.com/furan917/go-solar-system/commit/a6de1e057395f88917b49e4aaf74349005459bb0))
+
 ## [1.0.4](https://github.com/furan917/go-solar-system/compare/v1.0.3...v1.0.4) (2026-01-24)
 
 
