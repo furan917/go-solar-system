@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"io/fs"
 	"log"
 	"os"
 	"time"
@@ -31,12 +32,12 @@ type SolarSystem struct {
 	mouseHandler    *MouseEventHandler
 }
 
-func NewSolarSystem() (*SolarSystem, error) {
+func NewSolarSystem(bundledSystems fs.FS) (*SolarSystem, error) {
 	logger := log.New(os.Stderr, "[SolarSystem] ", log.LstdFlags|log.Lshortfile)
 
 	// Initialize core dependencies
 	client := api.NewClient()
-	systemManager := systems.NewSystemManager("systems")
+	systemManager := systems.NewSystemManager(bundledSystems, systems.SystemsSearchDirs()...)
 	if err := systemManager.ScanSystems(); err != nil {
 		return nil, NewSystemError("failed to scan systems", err)
 	}

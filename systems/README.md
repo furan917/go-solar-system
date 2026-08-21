@@ -1,6 +1,21 @@
 # External Star Systems
 
-This directory contains JSON files defining external star systems that can be explored in the Solar System Explorer application.
+This directory contains JSON files defining external star systems that can be explored in the Solar System Explorer application. These are compiled into the binary, so they are available wherever the application is installed.
+
+## Where Systems Are Loaded From
+
+Systems are read from up to four places, in increasing order of precedence:
+
+1. **Bundled** — the `.json` files in this directory, embedded into the binary at build time so they are available wherever the application runs.
+2. **`./systems`** — a `systems/` directory in the working directory, as in earlier versions. Still scanned, so running from a checkout picks up files you add without rebuilding.
+3. **Config directory** — `$XDG_CONFIG_HOME/go-solar-system/systems/` (usually `~/.config/go-solar-system/systems/`) on Linux, or the equivalent user config directory on macOS and Windows.
+4. **`GO_SOLAR_SYSTEM_SYSTEMS_DIR`** — an extra directory, if the variable is set. This is scanned *in addition to* the directories above, not instead of them.
+
+Every directory is optional; missing ones are skipped. Later sources shadow earlier ones by filename, so dropping `alpha-centauri.json` into your config directory replaces the bundled one.
+
+Filenames become system identifiers, so they may only contain letters, digits, `-` and `_`.
+
+To add a system just for yourself, put the file in the user directory — no rebuild required. To contribute one to the project, add it to this directory and open a PR.
 
 ## Adding New Star Systems
 
@@ -165,8 +180,8 @@ When creating systems, use real astronomical data from:
 
 ## Testing Your System
 
-1. Add your JSON file to the `systems/` directory
-2. Build and run the application: `go run main.go`
+1. Add your JSON file to `~/.config/go-solar-system/systems/` (or, if contributing it, to this directory)
+2. Run the application: `go-solar-system`, or `go run .` from a checkout
 3. Press 'S' to open system selection
 4. Your system should appear in the alphabetically sorted list
 5. Select it to verify:

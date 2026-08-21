@@ -1,6 +1,7 @@
 package systems
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"os"
@@ -16,19 +17,32 @@ type SystemData = formats.SystemData
 
 // SystemManager handles loading and switching between star systems
 type SystemManager struct {
-	systemsDir       string
-	availableSystems map[string]string
+	searchPaths      []fs.FS
+	availableSystems map[string]systemSource
 	currentSystem    string
 	loadedSystems    map[string]SystemData
 	cachedSystemInfo map[string]string
 	formatRegistry   *formats.FormatRegistry
 }
 
-// NewSystemManager creates a new system manager
-func NewSystemManager(systemsDir string) *SystemManager {
+// NewSystemManager creates a system manager reading bundled systems and userDirs, where later sources take precedence
+func NewSystemManager(bundled fs.FS, userDirs ...string) *SystemManager {
+	var searchPaths []fs.FS
+
+	if bundled != nil {
+		searchPaths = append(searchPaths, bundled)
+	}
+
+	for _, dir := range userDirs {
+		if dir == "" {
+			continue
+		}
+		searchPaths = append(searchPaths, os.DirFS(dir))
+	}
+
 	return &SystemManager{
-		systemsDir:       systemsDir,
-		availableSystems: make(map[string]string),
+		searchPaths:      searchPaths,
+		availableSystems: make(map[string]systemSource),
 		loadedSystems:    make(map[string]SystemData),
 		cachedSystemInfo: make(map[string]string),
 		currentSystem:    "solar-system",
@@ -36,52 +50,68 @@ func NewSystemManager(systemsDir string) *SystemManager {
 	}
 }
 
-// ScanSystems scans the systems directory for available system files
+// ScanSystems scans every configured source for available system files
 func (sm *SystemManager) ScanSystems() error {
-	if _, err := os.Stat(sm.systemsDir); os.IsNotExist(err) {
-		return nil
-	}
-
-	baseDir, err := filepath.Abs(sm.systemsDir)
-	if err != nil {
-		return fmt.Errorf("invalid systems directory: %w", err)
-	}
-
-	err = filepath.WalkDir(sm.systemsDir, func(path string, d fs.DirEntry, err error) error {
-		if err != nil {
+	for _, fsys := range sm.searchPaths {
+		if err := sm.scanSource(fsys); err != nil {
 			return err
 		}
+	}
 
-		absPath, err := filepath.Abs(path)
+	return nil
+}
+
+func (sm *SystemManager) scanSource(fsys fs.FS) error {
+	err := fs.WalkDir(fsys, ".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
-			return fmt.Errorf("failed to resolve path %s: %w", path, err)
-		}
-
-		if !strings.HasPrefix(absPath, baseDir) {
-			return fmt.Errorf("path traversal detected: %s", path)
+			return err
 		}
 
 		if d.IsDir() {
 			return nil
 		}
 
-		// Check if file extension is supported by any registered format
 		ext := strings.ToLower(filepath.Ext(path))
-		if _, supported := sm.formatRegistry.GetHandlerForExtension(ext); supported {
-			filename := d.Name()
-			systemName := strings.TrimSuffix(filename, filepath.Ext(filename))
-
-			if err := validateSystemName(systemName); err != nil {
-				return fmt.Errorf("invalid system name %s: %w", systemName, err)
-			}
-
-			sm.availableSystems[systemName] = path
+		if _, supported := sm.formatRegistry.GetHandlerForExtension(ext); !supported {
+			return nil
 		}
+
+		systemName := strings.TrimSuffix(d.Name(), filepath.Ext(d.Name()))
+		if err := validateSystemName(systemName); err != nil {
+			return fmt.Errorf("invalid system name %s: %w", systemName, err)
+		}
+
+		sm.availableSystems[systemName] = systemSource{fsys: fsys, path: path}
 
 		return nil
 	})
 
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+
 	return err
+}
+
+// readSystemFile returns a registered system's contents and its format handler
+func (sm *SystemManager) readSystemFile(systemName string) ([]byte, formats.FileFormat, error) {
+	source, exists := sm.availableSystems[systemName]
+	if !exists {
+		return nil, nil, fmt.Errorf("system '%s' not found", systemName)
+	}
+
+	data, err := fs.ReadFile(source.fsys, source.path)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to read system file %s: %w", source.path, err)
+	}
+
+	ext := strings.ToLower(filepath.Ext(source.path))
+	handler, exists := sm.formatRegistry.GetHandlerForExtension(ext)
+	if !exists {
+		return nil, nil, fmt.Errorf("unsupported file format: %s", ext)
+	}
+
+	return data, handler, nil
 }
 
 // GetAvailableSystems returns a list of available system names in alphabetical order
@@ -114,27 +144,14 @@ func (sm *SystemManager) LoadSystem(systemName string) (*SystemData, error) {
 		return nil, fmt.Errorf("solar system should be loaded via API")
 	}
 
-	filePath, exists := sm.availableSystems[systemName]
-	if !exists {
-		return nil, fmt.Errorf("system '%s' not found", systemName)
-	}
-
-	data, err := os.ReadFile(filePath)
+	data, handler, err := sm.readSystemFile(systemName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read system file %s: %w", filePath, err)
+		return nil, err
 	}
 
-	// Detect format and get appropriate handler
-	ext := strings.ToLower(filepath.Ext(filePath))
-	handler, exists := sm.formatRegistry.GetHandlerForExtension(ext)
-	if !exists {
-		return nil, fmt.Errorf("unsupported file format: %s", ext)
-	}
-
-	// Parse system data using the appropriate format handler
 	systemData, err := handler.ParseSystemData(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse system file %s: %w", filePath, err)
+		return nil, fmt.Errorf("failed to parse system file %s: %w", systemName, err)
 	}
 
 	system := *systemData
@@ -213,27 +230,14 @@ func (sm *SystemManager) GetSystemInfo(systemName string) (string, error) {
 
 // LoadSystemMetadata loads only the metadata (not celestial bodies) for performance
 func (sm *SystemManager) LoadSystemMetadata(systemName string) (*SystemData, error) {
-	filePath, exists := sm.availableSystems[systemName]
-	if !exists {
-		return nil, fmt.Errorf("system '%s' not found", systemName)
-	}
-
-	data, err := os.ReadFile(filePath)
+	data, handler, err := sm.readSystemFile(systemName)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read system file %s: %w", filePath, err)
+		return nil, err
 	}
 
-	// Detect format and get appropriate handler
-	ext := strings.ToLower(filepath.Ext(filePath))
-	handler, exists := sm.formatRegistry.GetHandlerForExtension(ext)
-	if !exists {
-		return nil, fmt.Errorf("unsupported file format: %s", ext)
-	}
-
-	// Parse system metadata using the appropriate format handler
 	metadata, err := handler.ParseSystemMetadata(data)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse system metadata %s: %w", filePath, err)
+		return nil, fmt.Errorf("failed to parse system metadata %s: %w", systemName, err)
 	}
 
 	return &SystemData{
@@ -246,23 +250,73 @@ func (sm *SystemManager) LoadSystemMetadata(systemName string) (*SystemData, err
 	}, nil
 }
 
-// ListSystemsWithInfo returns a formatted list of all available systems with descriptions
-func (sm *SystemManager) ListSystemsWithInfo() ([]string, error) {
-	systems := sm.GetAvailableSystems()
-	var info []string
+// SystemEntry pairs a system identifier with its display line
+type SystemEntry struct {
+	Name string
+	Info string
+}
 
-	for _, systemName := range systems {
-		systemInfo, err := sm.GetSystemInfo(systemName)
+// ListSystems returns every available system with its display line
+func (sm *SystemManager) ListSystems() []SystemEntry {
+	names := sm.GetAvailableSystems()
+	entries := make([]SystemEntry, 0, len(names))
+
+	for _, name := range names {
+		info, err := sm.GetSystemInfo(name)
 		if err != nil {
 			continue
 		}
 
 		marker := " "
-		if systemName == sm.currentSystem {
+		if name == sm.currentSystem {
 			marker = "*"
 		}
 
-		info = append(info, fmt.Sprintf(" %s %s", marker, systemInfo))
+		entries = append(entries, SystemEntry{
+			Name: name,
+			Info: fmt.Sprintf(" %s %s", marker, info),
+		})
+	}
+
+	return entries
+}
+
+// FilterSystems returns systems matching every whitespace-separated term in query, case-insensitively
+func (sm *SystemManager) FilterSystems(query string) []SystemEntry {
+	entries := sm.ListSystems()
+
+	terms := strings.Fields(strings.ToLower(query))
+	if len(terms) == 0 {
+		return entries
+	}
+
+	matches := make([]SystemEntry, 0, len(entries))
+	for _, entry := range entries {
+		haystack := strings.ToLower(entry.Name + " " + entry.Info)
+
+		matchesAll := true
+		for _, term := range terms {
+			if !strings.Contains(haystack, term) {
+				matchesAll = false
+				break
+			}
+		}
+
+		if matchesAll {
+			matches = append(matches, entry)
+		}
+	}
+
+	return matches
+}
+
+// ListSystemsWithInfo returns a formatted list of all available systems with descriptions
+func (sm *SystemManager) ListSystemsWithInfo() ([]string, error) {
+	entries := sm.ListSystems()
+
+	info := make([]string, 0, len(entries))
+	for _, entry := range entries {
+		info = append(info, entry.Info)
 	}
 
 	return info, nil

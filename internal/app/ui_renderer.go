@@ -10,6 +10,7 @@ import (
 	"github.com/furan917/go-solar-system/internal/ui"
 	"github.com/furan917/go-solar-system/internal/visualization"
 	"github.com/gdamore/tcell/v2"
+	"github.com/mattn/go-runewidth"
 )
 
 // UIRenderer handles all UI rendering concerns for the solar system application
@@ -56,7 +57,7 @@ func (ur *UIRenderer) DrawScreen() {
 	systemStyle := tcell.StyleDefault.Foreground(tcell.ColorWhite)
 
 	ur.drawText(2, height-2, instructionStyle, instructions)
-	ur.drawText(2+len(instructions)+3, height-2, systemStyle, fmt.Sprintf("• Current System: %s", systemDisplayName))
+	ur.drawText(2+runewidth.StringWidth(instructions)+3, height-2, systemStyle, fmt.Sprintf("• Current System: %s", systemDisplayName))
 
 	// Draw modals based on current state
 	if ur.state.IsShowingMoonDetails() {
@@ -78,8 +79,10 @@ func (ur *UIRenderer) DrawScreen() {
 
 // drawText renders text at the specified position with given style
 func (ur *UIRenderer) drawText(x, y int, style tcell.Style, text string) {
-	for i, r := range text {
-		ur.screen.SetContent(x+i, y, r, nil, style)
+	col := 0
+	for _, r := range text {
+		ur.screen.SetContent(x+col, y, r, nil, style)
+		col += runewidth.RuneWidth(r)
 	}
 }
 
@@ -100,7 +103,7 @@ func (ur *UIRenderer) drawPlanetList(x, y, maxWidth int) {
 		}
 
 		planetText := fmt.Sprintf(" %c %s ", symbol, name)
-		textWidth := len(planetText)
+		textWidth := runewidth.StringWidth(planetText)
 
 		if currentX+textWidth > x+maxWidth {
 			currentY++
@@ -138,6 +141,10 @@ func (ur *UIRenderer) drawSolarSystem(x, y, width, height int) {
 
 // getPlanetStyle returns the appropriate style for a planet symbol
 func (ur *UIRenderer) getPlanetStyle(symbol rune) tcell.Style {
+	if visualization.IsBraille(symbol) {
+		return tcell.StyleDefault.Foreground(tcell.ColorDarkGray)
+	}
+
 	switch symbol {
 	case '☉': // Sun
 		return tcell.StyleDefault.Foreground(tcell.ColorYellow).Bold(true)
@@ -219,12 +226,19 @@ func (ur *UIRenderer) createMoonDetailsModal() *ui.MoonDetailsModal {
 	)
 }
 
+// GetFilteredSystems returns the systems currently visible in the selection modal
+func (ur *UIRenderer) GetFilteredSystems() []systems.SystemEntry {
+	return ur.systemManager.FilterSystems(ur.state.SystemFilter)
+}
+
 func (ur *UIRenderer) createSystemModal() *ui.SystemModal {
 	return ui.NewSystemModal(
 		ur.screen,
-		ur.systemManager,
+		ur.GetFilteredSystems(),
 		ur.state.SystemSelectedIndex,
 		ur.state.SystemScrollIndex,
+		ur.state.SystemFilter,
+		ur.state.SystemFilterActive,
 	)
 }
 
@@ -315,6 +329,15 @@ func (ur *UIRenderer) GetModalDimensions(screenWidth, screenHeight int, dynamicH
 	return
 }
 
+// GetSystemModalDimensions returns the geometry of the system selection modal
+func (ur *UIRenderer) GetSystemModalDimensions(screenWidth, screenHeight int) (modalX, modalY, modalWidth, modalHeight int) {
+	modalWidth = constants.SystemModalWidth
+	modalHeight = constants.SystemModalHeight
+	modalX = screenWidth - modalWidth - constants.ModalMargin
+	modalY = 1
+	return
+}
+
 func (ur *UIRenderer) IsClickInModalArea(mouseX, mouseY int) bool {
 	if !ur.state.ShowingDetails && !ur.state.ShowingMoons && !ur.state.ShowingMoonDetails && !ur.state.ShowingSystemList {
 		return false
@@ -331,6 +354,8 @@ func (ur *UIRenderer) IsClickInModalArea(mouseX, mouseY int) bool {
 		contentLines := ur.calculateMoonDetailsLines(ur.state.SelectedMoon)
 		dynamicHeight := ui.Minimum(contentLines+6, screenHeight-4)
 		modalX, modalY, modalWidth, modalHeight = ur.GetModalDimensions(screenWidth, screenHeight, dynamicHeight)
+	} else if ur.state.ShowingSystemList {
+		modalX, modalY, modalWidth, modalHeight = ur.GetSystemModalDimensions(screenWidth, screenHeight)
 	} else {
 		modalX, modalY, modalWidth, modalHeight = ur.GetModalDimensions(screenWidth, screenHeight)
 	}

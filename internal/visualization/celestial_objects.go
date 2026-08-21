@@ -92,6 +92,11 @@ func (cor *CelestialObjectRenderer) RenderOrbit(grid [][]rune, centerX, centerY 
 	cor.circleDrawer.DrawCircle(grid, centerX, centerY, radius, '·')
 }
 
+// RenderOrbitBraille renders an orbital path into a braille canvas
+func (cor *CelestialObjectRenderer) RenderOrbitBraille(canvas *BrailleCanvas, centerX, centerY int, radius float64) {
+	cor.circleDrawer.DrawCircleBraille(canvas, centerX, centerY, radius)
+}
+
 // getOrbitalAngle calculates the current orbital angle for a planet using realistic orbital mechanics
 func (cor *CelestialObjectRenderer) getOrbitalAngle(planet models.CelestialBody) float64 {
 	if planet.SideralOrbit <= 0 {

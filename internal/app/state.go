@@ -31,6 +31,10 @@ type AppState struct {
 	ShowingMoonDetails bool
 	ShowingSystemList  bool
 
+	// System selection filtering
+	SystemFilter       string
+	SystemFilterActive bool
+
 	// Scroll state for lists
 	MoonScrollIndex     int
 	MoonSelectedIndex   int
@@ -75,6 +79,7 @@ func (s *AppState) ResetModals() {
 	s.ShowingMoons = false
 	s.ShowingMoonDetails = false
 	s.ShowingSystemList = false
+	s.ClearSystemFilter()
 }
 
 // IsAnyModalShowing returns true if any modal is currently visible
@@ -111,6 +116,46 @@ func (s *AppState) ShowSystemList() {
 	s.ShowingSystemList = true
 }
 
+// ClearSystemFilter removes any active system filter and leaves filter mode
+func (s *AppState) ClearSystemFilter() {
+	s.SystemFilter = ""
+	s.SystemFilterActive = false
+}
+
+// ClampSystemSelection keeps the selection and scroll offset inside a list of systemCount entries
+func (s *AppState) ClampSystemSelection(systemCount int) {
+	if systemCount <= 0 {
+		s.SystemSelectedIndex = 0
+		s.SystemScrollIndex = 0
+		return
+	}
+
+	if s.SystemSelectedIndex >= systemCount {
+		s.SystemSelectedIndex = systemCount - 1
+	}
+	if s.SystemSelectedIndex < 0 {
+		s.SystemSelectedIndex = 0
+	}
+
+	maxScroll := systemCount - constants.SystemListVisibleItems
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	if s.SystemScrollIndex > maxScroll {
+		s.SystemScrollIndex = maxScroll
+	}
+	if s.SystemScrollIndex < 0 {
+		s.SystemScrollIndex = 0
+	}
+
+	if s.SystemSelectedIndex < s.SystemScrollIndex {
+		s.SystemScrollIndex = s.SystemSelectedIndex
+	}
+	if s.SystemSelectedIndex >= s.SystemScrollIndex+constants.SystemListVisibleItems {
+		s.SystemScrollIndex = s.SystemSelectedIndex - constants.SystemListVisibleItems + 1
+	}
+}
+
 // HandleMoonNavigation updates moon navigation state
 func (s *AppState) HandleMoonNavigation(direction int, moonCount int) {
 	switch direction {
@@ -137,18 +182,14 @@ func (s *AppState) HandleSystemNavigation(direction int, systemCount int) {
 	case -1: // Up
 		if s.SystemSelectedIndex > 0 {
 			s.SystemSelectedIndex--
-			if s.SystemSelectedIndex < s.SystemScrollIndex {
-				s.SystemScrollIndex = s.SystemSelectedIndex
-			}
 		}
 	case 1: // Down
 		if s.SystemSelectedIndex < systemCount-1 {
 			s.SystemSelectedIndex++
-			if s.SystemSelectedIndex >= s.SystemScrollIndex+constants.MaxVisibleItems {
-				s.SystemScrollIndex = s.SystemSelectedIndex - constants.MaxVisibleItems + 1
-			}
 		}
 	}
+
+	s.ClampSystemSelection(systemCount)
 }
 
 // UpdatePlanetSelection updates the currently selected planet
